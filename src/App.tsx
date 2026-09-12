@@ -14,13 +14,17 @@ import { BeautyDemoApp } from "./components/beauty-demo/BeautyDemoApp";
 import { ClothesDemoApp } from "./components/clothes-demo/ClothesDemoApp";
 import { TechNovaDemoApp } from "./components/technova-demo/TechNovaDemoApp";
 import { SweetCrustBakeryApp } from "./components/bakery-demo/SweetCrustBakeryApp";
+import { AnxMartEcommerceApp } from "./components/ecommerce-demo/AnxMartEcommerceApp";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"agency" | "food-demo" | "beauty-demo" | "clothes-demo" | "electronics-demo" | "bakery-demo">(() => {
+  const [currentView, setCurrentView] = useState<"agency" | "food-demo" | "beauty-demo" | "clothes-demo" | "electronics-demo" | "bakery-demo" | "ecommerce-demo">(() => {
     // Check if query params or hash specify a demo directly (useful for standalone tabs)
     if (typeof window !== "undefined") {
       const search = window.location.search.toLowerCase();
       const hash = window.location.hash.toLowerCase();
+      if (search.includes("ecommerce") || hash.includes("ecommerce") || search.includes("e-commerce") || search.includes("anxmart")) {
+        return "ecommerce-demo";
+      }
       if (search.includes("bakery") || hash.includes("bakery") || search.includes("sweetcrust") || hash.includes("sweetcrust")) {
         return "bakery-demo";
       }
@@ -112,6 +116,14 @@ export default function App() {
     }
   };
 
+  const handleLaunchEcommerceDemo = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentView("ecommerce-demo");
+    if (window.history.pushState) {
+      window.history.pushState(null, "", "?demo=ecommerce");
+    }
+  };
+
   const handleBackToAgency = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setCurrentView("agency");
@@ -131,6 +143,11 @@ export default function App() {
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // If in E-Commerce Demo View, render the complete ANX MART e-commerce store!
+  if (currentView === "ecommerce-demo") {
+    return <AnxMartEcommerceApp onBackToAgency={handleBackToAgency} />;
+  }
 
   // If in Bakery Demo View, render the complete SWEET CRUST bakery store!
   if (currentView === "bakery-demo") {
@@ -188,6 +205,7 @@ export default function App() {
             onLaunchClothesDemo={handleLaunchClothesDemo}
             onLaunchElectronicsDemo={handleLaunchElectronicsDemo}
             onLaunchBakeryDemo={handleLaunchBakeryDemo}
+            onLaunchEcommerceDemo={handleLaunchEcommerceDemo}
             onOpenDemoModal={(serviceName) => handleOpenDemoWithService(serviceName)}
           />
 

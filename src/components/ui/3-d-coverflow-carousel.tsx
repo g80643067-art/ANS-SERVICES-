@@ -33,6 +33,7 @@ export interface CarouselItem {
   isClothesDemo?: boolean;
   isElectronicsDemo?: boolean;
   isBakeryDemo?: boolean;
+  isEcommerceDemo?: boolean;
   isLiveDemo?: boolean;
   demoUrl?: string;
   isPureImage?: boolean;
@@ -48,6 +49,7 @@ export interface CoverFlowCarouselProps {
   onClothesDemoClick?: (item: CarouselItem) => void;
   onElectronicsDemoClick?: (item: CarouselItem) => void;
   onBakeryDemoClick?: (item: CarouselItem) => void;
+  onEcommerceDemoClick?: (item: CarouselItem) => void;
   onLiveDemoClick?: (item: CarouselItem) => void;
   onCtaClick?: (item: CarouselItem) => void;
 }
@@ -110,6 +112,7 @@ export function CoverFlowCarousel({
   onClothesDemoClick,
   onElectronicsDemoClick,
   onBakeryDemoClick,
+  onEcommerceDemoClick,
   onLiveDemoClick,
   onCtaClick,
 }: CoverFlowCarouselProps) {
@@ -267,6 +270,7 @@ export function CoverFlowCarousel({
             const isClothesCard = Boolean(item.isClothesDemo);
             const isElectronicsCard = Boolean(item.isElectronicsDemo);
             const isBakeryCard = Boolean(item.isBakeryDemo);
+            const isEcommerceCard = Boolean(item.isEcommerceDemo);
             const isLiveDemoCard = Boolean(item.isLiveDemo);
 
             return (
@@ -313,6 +317,19 @@ export function CoverFlowCarousel({
                         rawUrl && rawUrl !== "[PASTE BAKERY DEMO URL HERE]" && rawUrl !== "#"
                           ? (rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`)
                           : "https://bakery-patisserie-demo.web.app";
+                      if (destinationUrl) {
+                        window.open(destinationUrl, "_blank", "noopener,noreferrer");
+                      }
+                    }
+                  } else if (isEcommerceCard) {
+                    if (onEcommerceDemoClick) {
+                      onEcommerceDemoClick(item);
+                    } else {
+                      const rawUrl = item.demoUrl || "[PASTE E-COMMERCE DEMO URL HERE]";
+                      const destinationUrl =
+                        rawUrl && rawUrl !== "[PASTE E-COMMERCE DEMO URL HERE]" && rawUrl !== "#"
+                          ? (rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`)
+                          : "https://ecommerce-store-demo.web.app";
                       if (destinationUrl) {
                         window.open(destinationUrl, "_blank", "noopener,noreferrer");
                       }
@@ -840,6 +857,122 @@ export function CoverFlowCarousel({
                         }}
                       >
                         {item.desc || "Artisan Breads, French Pastries, Gourmet Cakes & Fresh Baked Goods"}
+                      </p>
+
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.18em",
+                          textTransform: "uppercase",
+                          color: "rgba(216, 180, 254, 0.9)",
+                          textShadow: "0 2px 8px rgba(0,0,0,0.9)",
+                        }}
+                        className="transition-all duration-200 hover:text-purple-300"
+                      >
+                        CLICK HERE TO SEE DEMO
+                      </div>
+                    </div>
+                  </>
+                ) : isEcommerceCard ? (
+                  <>
+                    {/* Modern E-Commerce Dark Vignette Overlay */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(180deg, rgba(15,10,25,0.3) 0%, rgba(15,10,25,0.05) 28%, rgba(15,10,25,0.66) 60%, rgba(10,5,20,0.97) 100%)",
+                        pointerEvents: "none",
+                        zIndex: 10,
+                      }}
+                    />
+
+                    {/* Content Overlay */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "28px",
+                        left: "14px",
+                        right: "14px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        zIndex: 20,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {/* Top Category Whisper */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <span style={{ color: "#C084FC", fontWeight: 700, fontSize: "1.1rem", lineHeight: 1 }}>—</span>
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.22em",
+                            color: "#C084FC",
+                            textTransform: "uppercase",
+                            textShadow: "0 2px 8px rgba(0,0,0,0.8)",
+                          }}
+                        >
+                          {item.titleLine1 || "ONLINE STORE & PRODUCTS"}
+                        </span>
+                        <span style={{ color: "#C084FC", fontWeight: 700, fontSize: "1.1rem", lineHeight: 1 }}>—</span>
+                      </div>
+
+                      {/* Clear Label: E-COMMERCE DEMO */}
+                      <h2
+                        style={{
+                          fontSize: "1.85rem",
+                          fontWeight: 900,
+                          letterSpacing: "0.06em",
+                          color: "#ffffff",
+                          margin: "0",
+                          lineHeight: 1.1,
+                          textTransform: "uppercase",
+                          fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+                          textShadow: "0 4px 16px rgba(0,0,0,0.95)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        E-COMMERCE DEMO
+                      </h2>
+
+                      {/* Electric Purple Accent Divider */}
+                      <div
+                        style={{
+                          width: "52px",
+                          height: "2px",
+                          backgroundColor: "#C084FC",
+                          borderRadius: "2px",
+                          margin: "8px auto 8px",
+                          boxShadow: "0 0 10px rgba(192,132,252,0.7)",
+                        }}
+                      />
+
+                      {/* Subtitle description */}
+                      <p
+                        style={{
+                          fontSize: "0.82rem",
+                          fontStyle: "italic",
+                          color: "rgba(255,255,255,0.9)",
+                          maxWidth: "280px",
+                          margin: 0,
+                          lineHeight: 1.3,
+                          textShadow: "0 2px 8px rgba(0,0,0,0.9)",
+                        }}
+                      >
+                        {item.desc || "Modern online shopping interface, product catalog & cart experience"}
                       </p>
 
                       <div

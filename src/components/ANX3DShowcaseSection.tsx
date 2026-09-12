@@ -23,16 +23,32 @@ export const ELECTRONIC_DEVICES_DEMO_URL = "[PASTE ELECTRONIC DEVICES DEMO URL H
 // [PASTE BAKERY DEMO URL HERE]
 export const BAKERY_DEMO_URL = "[PASTE BAKERY DEMO URL HERE]";
 
+// Destination URL for the E-Commerce Demo card (opens in a new tab when clicked)
+// [PASTE E-COMMERCE DEMO URL HERE]
+export const ECOMMERCE_DEMO_URL = "[PASTE E-COMMERCE DEMO URL HERE]";
+
 interface ANX3DShowcaseSectionProps {
   onLaunchFoodDemo: () => void;
   onLaunchBeautyDemo?: () => void;
   onLaunchClothesDemo?: () => void;
   onLaunchElectronicsDemo?: () => void;
   onLaunchBakeryDemo?: () => void;
+  onLaunchEcommerceDemo?: () => void;
   onOpenDemoModal: (serviceName?: string) => void;
 }
 
-// 1. Premium Clothes / Fashion Brand Demo Item (Clickable - opens destination URL in new tab)
+// 1. Premium E-Commerce Demo Item (Clickable - opens destination URL in new tab)
+export const ecommerceDemoItem: CarouselItem = {
+  isEcommerceDemo: true,
+  tag: "#ECommerceStore",
+  titleLine1: "ONLINE STORE & PRODUCTS",
+  titleLine2: "E-COMMERCE DEMO",
+  desc: "Modern online shopping interface, product catalog & cart experience",
+  img: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1000&auto=format&fit=crop",
+  demoUrl: ECOMMERCE_DEMO_URL,
+};
+
+// 2. Premium Clothes / Fashion Brand Demo Item (Clickable - opens destination URL in new tab)
 export const clothesDemoItem: CarouselItem = {
   isClothesDemo: true,
   tag: "#LuxuryFashion",
@@ -43,7 +59,7 @@ export const clothesDemoItem: CarouselItem = {
   demoUrl: CLOTHES_DEMO_URL,
 };
 
-// 2. Premium Beauty / Salon Demo Item (Clickable - opens destination URL in new tab)
+// 3. Premium Beauty / Salon Demo Item (Clickable - opens destination URL in new tab)
 export const beautyDemoItem: CarouselItem = {
   isBeautyDemo: true,
   tag: "#LuxuryBeauty",
@@ -54,7 +70,7 @@ export const beautyDemoItem: CarouselItem = {
   demoUrl: BEAUTY_DEMO_URL,
 };
 
-// 3. Premium Electronic Devices Demo Item (Clickable - opens destination URL in new tab)
+// 4. Premium Electronic Devices Demo Item (Clickable - opens destination URL in new tab)
 export const electronicDevicesDemoItem: CarouselItem = {
   isElectronicsDemo: true,
   tag: "#SmartTech",
@@ -65,7 +81,7 @@ export const electronicDevicesDemoItem: CarouselItem = {
   demoUrl: ELECTRONIC_DEVICES_DEMO_URL,
 };
 
-// 4. Premium Bakery Demo Item (Clickable - opens destination URL in new tab)
+// 5. Premium Bakery Demo Item (Clickable - opens destination URL in new tab)
 export const bakeryDemoItem: CarouselItem = {
   isBakeryDemo: true,
   tag: "#ArtisanBakery",
@@ -76,7 +92,7 @@ export const bakeryDemoItem: CarouselItem = {
   demoUrl: BAKERY_DEMO_URL,
 };
 
-// 5. Restaurant & Street Food Demo Item (Clickable - launches interactive food demo)
+// 6. Restaurant & Street Food Demo Item (Clickable - launches interactive food demo)
 export const streetFoodDemoItem: CarouselItem = {
   img: streetFoodPosterImg,
   isLiveDemo: true,
@@ -88,6 +104,7 @@ export const streetFoodDemoItem: CarouselItem = {
 
 // ONLY the demo cards explicitly created - no unwanted or placeholder cards
 const liveDemoItems: CarouselItem[] = [
+  ecommerceDemoItem,
   clothesDemoItem,
   beautyDemoItem,
   electronicDevicesDemoItem,
@@ -101,6 +118,7 @@ export function ANX3DShowcaseSection({
   onLaunchClothesDemo,
   onLaunchElectronicsDemo,
   onLaunchBakeryDemo,
+  onLaunchEcommerceDemo,
   onOpenDemoModal,
 }: ANX3DShowcaseSectionProps) {
   return (
@@ -156,6 +174,21 @@ export function ANX3DShowcaseSection({
                 if (targetUrl && targetUrl !== "#") {
                   window.open(targetUrl, "_blank", "noopener,noreferrer");
                 }
+              }
+            }}
+            onEcommerceDemoClick={(item) => {
+              const rawUrl = item.demoUrl || ECOMMERCE_DEMO_URL;
+              const targetUrl =
+                rawUrl && rawUrl !== "[PASTE E-COMMERCE DEMO URL HERE]" && rawUrl !== "#"
+                  ? (rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`)
+                  : `${window.location.origin}${window.location.pathname}?demo=ecommerce`;
+              try {
+                const newWin = window.open(targetUrl, "_blank", "noopener,noreferrer");
+                if (!newWin && onLaunchEcommerceDemo) {
+                  onLaunchEcommerceDemo();
+                }
+              } catch {
+                if (onLaunchEcommerceDemo) onLaunchEcommerceDemo();
               }
             }}
             onElectronicsDemoClick={(item) => {
