@@ -36,7 +36,7 @@ const MEMBERS: Record<number, MemberDetails> = {
     name: "Nikhil",
     label: "MEMBER 2",
     role: "Web Developer / Creative Developer",
-    contact: "9219694862",
+    contact: "+91 9219694862",
     bio: "Full-stack engineer specializing in scalable system architecture, seamless API integrations, robust state management, and lightning-fast web deployments.",
     skills: ["Next.js / Vite", "Node.js & Express", "TypeScript", "State Management", "Database Design", "Performance Optimization"],
     anxWork: "Designing secure backend services, state synchronization engines, client-side routing, and cross-platform responsive business solutions.",

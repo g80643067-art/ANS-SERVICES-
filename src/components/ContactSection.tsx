@@ -80,28 +80,28 @@ export function ContactSection() {
                       Primary Contact
                     </div>
                     <a
-                      href="tel:+91219694862"
+                      href="tel:+919219694862"
                       className="text-base font-bold text-white hover:text-purple-300 transition-colors"
                     >
-                      +91 219694862
+                      +91 9219694862
                     </a>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => copyToClipboard("+91219694862")}
+                    onClick={() => copyToClipboard("+919219694862")}
                     className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
                     title="Copy number"
                   >
-                    {copiedNumber === "+91219694862" ? (
+                    {copiedNumber === "+919219694862" ? (
                       <Check className="w-4 h-4 text-emerald-400" />
                     ) : (
                       <Copy className="w-4 h-4" />
                     )}
                   </button>
                   <a
-                    href="tel:+91219694862"
+                    href="tel:+919219694862"
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition-colors"
                   >
                     Call

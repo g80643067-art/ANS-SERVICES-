@@ -50,11 +50,11 @@ export function Footer({ onOpenDemo, onScrollToTop }: FooterProps) {
                 <span>+91 7348382816</span>
               </a>
               <a
-                href="tel:+91219694862"
+                href="tel:+919219694862"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-white hover:text-blue-300 hover:border-blue-500/40 transition-all"
               >
                 <Phone className="w-3.5 h-3.5 text-blue-400" />
-                <span>+91 219694862</span>
+                <span>+91 9219694862</span>
               </a>
             </div>
           </div>

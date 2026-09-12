@@ -176,7 +176,7 @@ export function DemoModal({ isOpen, onClose, preselectedService }: DemoModalProp
 
               <div className="text-center">
                 <span className="text-[11px] text-slate-500">
-                  Direct developer call available at +91 7348382816 / +91 219694862
+                  Direct developer call available at +91 7348382816 / +91 9219694862
                 </span>
               </div>
             </form>

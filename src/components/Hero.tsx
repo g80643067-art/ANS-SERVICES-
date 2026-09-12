@@ -87,10 +87,10 @@ export function Hero({
             </span>
             <div className="flex items-center gap-3">
               <a
-                href="tel:+91219694862"
+                href="tel:+919219694862"
                 className="text-white hover:text-purple-300 hover:underline transition-colors px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800"
               >
-                +91 219694862
+                +91 9219694862
               </a>
               <span className="text-slate-600 font-normal">/</span>
               <a

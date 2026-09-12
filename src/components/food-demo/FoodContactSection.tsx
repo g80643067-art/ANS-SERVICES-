@@ -49,10 +49,10 @@ export function FoodContactSection() {
 
             <div className="space-y-2.5">
               <a
-                href="tel:+91219694862"
+                href="tel:+919219694862"
                 className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/80 text-white font-bold text-sm transition-all group"
               >
-                <span>+91 219694862</span>
+                <span>+91 9219694862</span>
                 <span className="text-xs font-semibold text-amber-400 group-hover:underline flex items-center gap-1">
                   Call Line 1 →
                 </span>

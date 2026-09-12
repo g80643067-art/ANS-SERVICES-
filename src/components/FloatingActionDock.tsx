@@ -30,12 +30,12 @@ export function FloatingActionDock({ onOpenDemo }: FloatingActionDockProps) {
           </a>
 
           <a
-            href="tel:+91219694862"
+            href="tel:+919219694862"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 transition-all"
-            title="Call +91 219694862"
+            title="Call +91 9219694862"
           >
             <Phone className="w-4 h-4 text-blue-400" />
-            <span>Call +91 219694862</span>
+            <span>Call +91 9219694862</span>
           </a>
 
           <a
