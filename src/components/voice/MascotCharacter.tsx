@@ -5,8 +5,11 @@ import { AgentOption } from "./AgentSelectorModal";
 
 export type MascotState = "idle" | "listening" | "processing" | "speaking" | "success" | "confused" | "happy" | "angry" | "hungry" | "eating" | "bored" | "exploring";
 
+export type MascotEmotion = "neutral" | "happy" | "laughing" | "annoyed" | "sad" | "crying" | "surprised" | "bored";
+
 interface MascotCharacterProps {
   state: MascotState;
+  emotion?: MascotEmotion;
   transcript?: string;
   isMuted?: boolean;
   onToggleMic?: () => void;
@@ -26,6 +29,7 @@ interface MascotCharacterProps {
 
 export function MascotCharacter({
   state,
+  emotion = "neutral",
   transcript = "",
   isMuted = false,
   onToggleMic,
@@ -118,20 +122,40 @@ export function MascotCharacter({
     return () => clearInterval(wanderInterval);
   }, [state]);
 
-  // Eyes look according to state
+  // Eyes look according to state & emotion
   const getPupilOffset = () => {
+    if (emotion === "bored") return { x: 3, y: 1 };
+    if (emotion === "surprised") return { x: 0, y: -1 };
+    if (emotion === "annoyed") return { x: 0, y: 1 };
+    if (emotion === "sad" || emotion === "crying") return { x: 0, y: 2 };
     if (state === "processing") return { x: 2, y: -3 }; // Looking up thoughtfully
     if (state === "listening") return { x: -2, y: -1 }; // Focused attentively on user
     if (state === "speaking") return { x: 0, y: 0 };
-    if (state === "angry") return { x: 0, y: 1 }; // Look down a bit, annoyed
-    if (state === "hungry") return { x: 1, y: 1 }; // Slightly tired look
+    if (state === "angry") return { x: 0, y: 1 };
+    if (state === "hungry") return { x: 1, y: 1 };
     return gazeDirection;
   };
 
   const pupilOffset = getPupilOffset();
 
-  // Dynamic glow colors based on state
+  // Dynamic glow colors based on state & emotion
   const getAuraColor = () => {
+    if (emotion === "annoyed") {
+      return "from-rose-500/40 via-red-600/25 to-transparent";
+    }
+    if (emotion === "laughing" || emotion === "happy") {
+      return "from-amber-400/35 via-purple-500/25 to-pink-500/15";
+    }
+    if (emotion === "sad" || emotion === "crying") {
+      return "from-sky-500/35 via-indigo-500/20 to-transparent";
+    }
+    if (emotion === "surprised") {
+      return "from-violet-500/40 via-fuchsia-500/25 to-pink-500/15";
+    }
+    if (emotion === "bored") {
+      return "from-zinc-500/30 via-purple-900/10 to-transparent";
+    }
+
     switch (state) {
       case "listening":
         return "from-cyan-500/30 via-indigo-500/20 to-purple-500/10";
@@ -209,8 +233,81 @@ export function MascotCharacter({
 
         {/* State Floating Icon Badge / Speech Mood Indicator */}
         <AnimatePresence>
-          {state === "listening" && (
+          {emotion === "laughing" && (
             <motion.div
+              key="laughing-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-amber-500/50 text-amber-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Haha! 😄</span>
+            </motion.div>
+          )}
+
+          {emotion === "annoyed" && (
+            <motion.div
+              key="annoyed-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-rose-500/60 text-rose-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Hmph! 😤</span>
+            </motion.div>
+          )}
+
+          {emotion === "crying" && (
+            <motion.div
+              key="crying-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-sky-500/50 text-sky-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Udaas... 🥺</span>
+            </motion.div>
+          )}
+
+          {emotion === "sad" && (
+            <motion.div
+              key="sad-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-sky-500/50 text-sky-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Aww... 🥺</span>
+            </motion.div>
+          )}
+
+          {emotion === "surprised" && (
+            <motion.div
+              key="surprised-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-violet-500/50 text-violet-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Whoa! 😲</span>
+            </motion.div>
+          )}
+
+          {emotion === "bored" && (
+            <motion.div
+              key="bored-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-zinc-500/50 text-zinc-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <span>Zzz... 🥱</span>
+            </motion.div>
+          )}
+
+          {state === "listening" && emotion !== "annoyed" && emotion !== "crying" && emotion !== "laughing" && (
+            <motion.div
+              key="listening-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
@@ -223,6 +320,7 @@ export function MascotCharacter({
 
           {state === "processing" && (
             <motion.div
+              key="processing-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
@@ -233,8 +331,9 @@ export function MascotCharacter({
             </motion.div>
           )}
 
-          {state === "success" && (
+          {state === "success" && emotion !== "annoyed" && emotion !== "crying" && (
             <motion.div
+              key="success-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
@@ -242,41 +341,6 @@ export function MascotCharacter({
             >
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               <span>Done!</span>
-            </motion.div>
-          )}
-
-          {state === "confused" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: -6 }}
-              exit={{ opacity: 0, scale: 0.6, y: 5 }}
-              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-amber-500/50 text-amber-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
-            >
-              <HelpCircle className="w-3 h-3 text-amber-400" />
-              <span>Poochiye?</span>
-            </motion.div>
-          )}
-
-          {state === "happy" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: -6 }}
-              exit={{ opacity: 0, scale: 0.6, y: 5 }}
-              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
-            >
-              <Sparkles className="w-3 h-3 text-emerald-400" />
-              <span>Yay!</span>
-            </motion.div>
-          )}
-
-          {state === "angry" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: -6 }}
-              exit={{ opacity: 0, scale: 0.6, y: 5 }}
-              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-rose-500/40 text-rose-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
-            >
-              <span>Hmph!</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -289,25 +353,51 @@ export function MascotCharacter({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.94 }}
           className="relative pointer-events-auto cursor-pointer focus:outline-none"
-          title={isMuted ? "Tap to enable voice assistant" : "ANX Voice Receptionist - Listening hands-free"}
+          title={isMuted ? "Tap to enable voice companion" : "Virtual Companion - Listening hands-free"}
         >
           {/* Main Breathing & Gesture Physics Container */}
           <motion.div
             animate={{
-              y: state === "speaking" ? [0, -3, 0, -2, 0] : [0, -5, 0],
-              rotate: state === "processing" ? 3 : state === "listening" ? -2 : isHovered ? 2 : 0,
+              y: emotion === "laughing"
+                ? [0, -6, 0, -4, 0]
+                : emotion === "sad" || emotion === "crying"
+                ? [0, 2, 0]
+                : emotion === "surprised"
+                ? [0, -6, 0]
+                : state === "speaking"
+                ? [0, -3, 0, -2, 0]
+                : [0, -5, 0],
+              rotate: emotion === "annoyed"
+                ? -4
+                : emotion === "bored"
+                ? 4
+                : emotion === "laughing"
+                ? [0, 2, -2, 0]
+                : state === "processing"
+                ? 3
+                : state === "listening"
+                ? -2
+                : isHovered
+                ? 2
+                : 0,
             }}
             transition={{
               y: {
                 repeat: Infinity,
-                duration: state === "speaking" ? 1.4 : 3.2,
+                duration: emotion === "laughing" ? 1.1 : state === "speaking" ? 1.4 : 3.2,
                 ease: "easeInOut",
               },
-              rotate: {
-                type: "spring",
-                stiffness: 120,
-                damping: 15,
-              },
+              rotate: emotion === "laughing"
+                ? {
+                    repeat: Infinity,
+                    duration: 1.1,
+                    ease: "easeInOut",
+                  }
+                : {
+                    type: "spring",
+                    stiffness: 120,
+                    damping: 15,
+                  },
             }}
             className="w-20 h-28 sm:w-24 sm:h-32 relative"
           >
@@ -378,6 +468,18 @@ export function MascotCharacter({
                 <linearGradient id="alexEyeGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#047857" />
                   <stop offset="100%" stopColor="#34D399" />
+                </linearGradient>
+                {/* Annoyed Glowing Red Eye Gradient */}
+                <linearGradient id="annoyedEyeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#DC2626" />
+                  <stop offset="50%" stopColor="#EF4444" />
+                  <stop offset="100%" stopColor="#991B1B" />
+                </linearGradient>
+                {/* Watery Eye Gradient for Sad/Crying */}
+                <linearGradient id="wateryEyeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#38BDF8" />
+                  <stop offset="50%" stopColor="#6366F1" />
+                  <stop offset="100%" stopColor="#818CF8" />
                 </linearGradient>
 
                 {/* Cyber Headset Purple Neon */}
@@ -497,7 +599,38 @@ export function MascotCharacter({
                 {/* 4. Eyes & Eyebrows */}
                 {/* Eyebrows */}
                 <g id="eyebrows">
-                  {state === "processing" ? (
+                  {emotion === "annoyed" ? (
+                    // Furrowed, slightly annoyed eyebrows
+                    <>
+                      <path d="M56 68L71 63" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
+                      <path d="M89 63L104 68" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
+                      <path d="M78 65L82 65" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+                    </>
+                  ) : emotion === "sad" || emotion === "crying" ? (
+                    // Melancholic / sympathetic eyebrows curved up towards middle
+                    <>
+                      <path d="M57 62C62 66 67 66 71 64" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M89 64C93 66 98 66 103 62" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                    </>
+                  ) : emotion === "surprised" ? (
+                    // High arched surprised eyebrows
+                    <>
+                      <path d="M56 61C61 56 67 56 71 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
+                      <path d="M89 61C93 56 99 56 104 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
+                    </>
+                  ) : emotion === "bored" ? (
+                    // Slightly drooped flat eyebrows
+                    <>
+                      <path d="M58 66H70" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                      <path d="M90 66H102" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                    </>
+                  ) : emotion === "happy" || emotion === "laughing" ? (
+                    // High cheerful arched eyebrows
+                    <>
+                      <path d="M57 63C62 59 67 59 71 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M89 63C93 59 98 59 103 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                    </>
+                  ) : state === "processing" ? (
                     // Inquisitive curved eyebrows
                     <>
                       <path d="M57 65C62 61 68 63 71 66" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
@@ -520,69 +653,205 @@ export function MascotCharacter({
 
                 {/* EYES */}
                 <g id="eyes">
-                  {isBlinking || state === "success" ? (
+                  {emotion === "laughing" || (isBlinking && emotion !== "surprised") || state === "success" ? (
                     // Joyful closed curved eyes (^_^)
                     <>
                       <path
-                        d="M56 80C60 74 68 74 72 80"
+                        d="M56 80C60 73 68 73 72 80"
                         stroke="#2B1446"
                         strokeWidth="3.2"
                         strokeLinecap="round"
                       />
                       <path
-                        d="M88 80C92 74 100 74 104 80"
+                        d="M88 80C92 73 100 73 104 80"
                         stroke="#2B1446"
                         strokeWidth="3.2"
                         strokeLinecap="round"
                       />
                     </>
+                  ) : emotion === "surprised" ? (
+                    // Widened Surprised Eyes
+                    <>
+                      {/* Left Eye */}
+                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
+                        <ellipse cx="64" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
+                        <ellipse cx="64" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
+                        <ellipse cx="64" cy="78" rx="4.2" ry="6" fill="#180B2B" />
+                        <circle cx="61.5" cy="73" r="3.2" fill="#FFFFFF" />
+                        <circle cx="67" cy="83" r="1.5" fill="#FFFFFF" />
+                      </g>
+                      <path d="M54 73C58 66 70 66 74 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
+
+                      {/* Right Eye */}
+                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
+                        <ellipse cx="96" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
+                        <ellipse cx="96" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
+                        <ellipse cx="96" cy="78" rx="4.2" ry="6" fill="#180B2B" />
+                        <circle cx="93.5" cy="73" r="3.2" fill="#FFFFFF" />
+                        <circle cx="99" cy="83" r="1.5" fill="#FFFFFF" />
+                      </g>
+                      <path d="M86 73C90 66 102 66 106 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
+                    </>
                   ) : (
-                    // Open, Sparkling Anime Eyes
+                    // Open Eyes with Dynamic Emotional Expressions
                     <>
                       {/* Left Eye Sclera & Iris */}
                       <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
                         <ellipse cx="64" cy="78" rx="8" ry="11" fill="#FFFFFF" />
-                        <ellipse cx="64" cy="78" rx="6.5" ry="9.5" fill={`url(#${agentId}EyeGrad)`} />
+                        <ellipse
+                          cx="64"
+                          cy="78"
+                          rx="6.5"
+                          ry="9.5"
+                          fill={
+                            emotion === "annoyed"
+                              ? "url(#annoyedEyeGrad)"
+                              : emotion === "sad" || emotion === "crying"
+                              ? "url(#wateryEyeGrad)"
+                              : `url(#${agentId}EyeGrad)`
+                          }
+                          className="transition-colors duration-500"
+                        />
                         <ellipse cx="64" cy="79" rx="3.5" ry="5" fill="#180B2B" />
+                        {/* Annoyed glowing ruby ring */}
+                        {emotion === "annoyed" && (
+                          <ellipse cx="64" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
+                        )}
                         {/* Eye Highlights */}
-                        <circle cx="62" cy="74" r="2.6" fill="#FFFFFF" />
-                        <circle cx="66" cy="82" r="1.3" fill="#FFFFFF" />
+                        <circle cx="62" cy="74" r={emotion === "sad" || emotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
+                        <circle cx="66" cy="82" r={emotion === "sad" || emotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
                         <circle cx="65.5" cy="75" r="0.9" fill="#E9D5FF" />
                       </g>
                       {/* Upper Eyelash & Lid */}
                       <path
-                        d="M55 75C58 69 70 69 73 75"
+                        d={emotion === "bored" ? "M55 77C58 74 70 74 73 77" : "M55 75C58 69 70 69 73 75"}
                         stroke="#220D3A"
-                        strokeWidth="2.8"
+                        strokeWidth={emotion === "bored" ? 3.4 : 2.8}
                         strokeLinecap="round"
                       />
+                      {/* Bored half-lidded shade */}
+                      {emotion === "bored" && (
+                        <path d="M56 71C60 76 68 76 72 71L72 68H56Z" fill="#FBD7C7" opacity="0.9" />
+                      )}
+                      {/* Watery glimmer for Sad / Crying */}
+                      {(emotion === "sad" || emotion === "crying") && (
+                        <ellipse cx="64" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
+                      )}
 
                       {/* Right Eye Sclera & Iris */}
                       <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
                         <ellipse cx="96" cy="78" rx="8" ry="11" fill="#FFFFFF" />
-                        <ellipse cx="96" cy="78" rx="6.5" ry="9.5" fill={`url(#${agentId}EyeGrad)`} />
+                        <ellipse
+                          cx="96"
+                          cy="78"
+                          rx="6.5"
+                          ry="9.5"
+                          fill={
+                            emotion === "annoyed"
+                              ? "url(#annoyedEyeGrad)"
+                              : emotion === "sad" || emotion === "crying"
+                              ? "url(#wateryEyeGrad)"
+                              : `url(#${agentId}EyeGrad)`
+                          }
+                          className="transition-colors duration-500"
+                        />
                         <ellipse cx="96" cy="79" rx="3.5" ry="5" fill="#180B2B" />
+                        {/* Annoyed glowing ruby ring */}
+                        {emotion === "annoyed" && (
+                          <ellipse cx="96" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
+                        )}
                         {/* Eye Highlights */}
-                        <circle cx="94" cy="74" r="2.6" fill="#FFFFFF" />
-                        <circle cx="98" cy="82" r="1.3" fill="#FFFFFF" />
+                        <circle cx="94" cy="74" r={emotion === "sad" || emotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
+                        <circle cx="98" cy="82" r={emotion === "sad" || emotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
                         <circle cx="97.5" cy="75" r="0.9" fill="#E9D5FF" />
                       </g>
                       {/* Upper Eyelash & Lid */}
                       <path
-                        d="M87 75C90 69 102 69 105 75"
+                        d={emotion === "bored" ? "M87 77C90 74 102 74 105 77" : "M87 75C90 69 102 69 105 75"}
                         stroke="#220D3A"
-                        strokeWidth="2.8"
+                        strokeWidth={emotion === "bored" ? 3.4 : 2.8}
                         strokeLinecap="round"
                       />
+                      {/* Bored half-lidded shade */}
+                      {emotion === "bored" && (
+                        <path d="M88 71C92 76 100 76 104 71L104 68H88Z" fill="#FBD7C7" opacity="0.9" />
+                      )}
+                      {/* Watery glimmer for Sad / Crying */}
+                      {(emotion === "sad" || emotion === "crying") && (
+                        <ellipse cx="96" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
+                      )}
                     </>
                   )}
                 </g>
+
+                {/* Subtle Tiny Animated Tear Droplets when Crying */}
+                {emotion === "crying" && (
+                  <g id="tears">
+                    <motion.ellipse
+                      cx="59"
+                      cy="86"
+                      rx="1.4"
+                      ry="2.2"
+                      fill="#38BDF8"
+                      animate={{
+                        cy: [86, 95, 106],
+                        opacity: [0, 0.85, 0],
+                        scaleY: [0.8, 1.2, 0.4],
+                      }}
+                      transition={{
+                        duration: 1.3,
+                        repeat: Infinity,
+                        ease: "easeIn",
+                      }}
+                    />
+                    <motion.ellipse
+                      cx="101"
+                      cy="86"
+                      rx="1.4"
+                      ry="2.2"
+                      fill="#38BDF8"
+                      animate={{
+                        cy: [86, 96, 107],
+                        opacity: [0, 0.85, 0],
+                        scaleY: [0.8, 1.2, 0.4],
+                      }}
+                      transition={{
+                        duration: 1.4,
+                        repeat: Infinity,
+                        ease: "easeIn",
+                        delay: 0.35,
+                      }}
+                    />
+                  </g>
+                )}
 
                 {/* 5. Mouth (Expressive & Speaking Animated) */}
                 <g id="mouth">
                   {state === "speaking" ? (
                     // Speaking Mouth Sync Animation Frames
-                    mouthFrame === 0 ? (
+                    emotion === "laughing" ? (
+                      // Speaking while laughing (wider open with visible teeth)
+                      mouthFrame === 0 ? (
+                        <g id="laugh-mouth-0">
+                          <path d="M72 97C74 104 86 104 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                          <path d="M73 97C75 99.5 85 99.5 87 97H73Z" fill="#FFFFFF" />
+                          <ellipse cx="80" cy="103" rx="3.5" ry="1.5" fill="#F43F5E" />
+                        </g>
+                      ) : mouthFrame === 1 ? (
+                        <g id="laugh-mouth-1">
+                          <ellipse cx="80" cy="100" rx="5" ry="4" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                          <path d="M75 97C77 99 83 99 85 97H75Z" fill="#FFFFFF" />
+                          <ellipse cx="80" cy="102" rx="3" ry="1.8" fill="#F43F5E" />
+                        </g>
+                      ) : mouthFrame === 2 ? (
+                        <g id="laugh-mouth-2">
+                          <path d="M73 97C75 106 85 106 87 97H73Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                          <path d="M74 97C76 100 84 100 86 97H74Z" fill="#FFFFFF" />
+                        </g>
+                      ) : (
+                        <path d="M72 98C75 103 85 103 88 98" stroke="#822727" strokeWidth="2.4" strokeLinecap="round" />
+                      )
+                    ) : mouthFrame === 0 ? (
                       <path
                         d="M74 98C77 102 83 102 86 98"
                         stroke="#822727"
@@ -596,6 +865,35 @@ export function MascotCharacter({
                     ) : (
                       <ellipse cx="80" cy="99" rx="3" ry="2" fill="#E53E3E" opacity="0.9" />
                     )
+                  ) : emotion === "laughing" ? (
+                    // VERY HAPPY / LAUGHING: Bigger smile, teeth visible!
+                    <g id="laughing-smile">
+                      <path d="M72 97C72 97 74.5 105 80 105C85.5 105 88 97 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                      {/* Pearly white upper teeth */}
+                      <path d="M73.5 97C75.5 99.8 84.5 99.8 86.5 97H73.5Z" fill="#FFFFFF" />
+                      {/* Cute tongue */}
+                      <ellipse cx="80" cy="103" rx="3.5" ry="1.8" fill="#F43F5E" />
+                    </g>
+                  ) : emotion === "happy" ? (
+                    // Natural happy smile
+                    <path
+                      d="M73 98C76 103 84 103 87 98"
+                      stroke="#822727"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                  ) : emotion === "annoyed" ? (
+                    // Annoyed slightly furrowed/pouting mouth
+                    <path d="M74 101C77 98 83 98 86 101" stroke="#741A1A" strokeWidth="2.2" strokeLinecap="round" />
+                  ) : emotion === "sad" || emotion === "crying" ? (
+                    // Reduced smile, drooped sad mouth
+                    <path d="M74 102C77 99 83 99 86 102" stroke="#741A1A" strokeWidth="2" strokeLinecap="round" />
+                  ) : emotion === "surprised" ? (
+                    // Cute open 'o' surprise gasp
+                    <ellipse cx="80" cy="100" rx="3.2" ry="4.2" fill="#881337" stroke="#4C0519" strokeWidth="0.8" />
+                  ) : emotion === "bored" ? (
+                    // Indifferent straight line mouth
+                    <path d="M75 100H85" stroke="#741A1A" strokeWidth="1.8" strokeLinecap="round" />
                   ) : state === "listening" ? (
                     // Attentive slightly parted 'o' mouth
                     <ellipse cx="80" cy="99" rx="3" ry="2.2" fill="#E53E3E" opacity="0.8" />

@@ -22,75 +22,93 @@ try {
   if (process.env.GEMINI_API_KEY) {
     ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
-} catch (error) {
-  console.error("Failed to initialize Gemini Client:", error);
+} catch {
+  ai = null;
 }
 
-const systemInstruction = `You are the natural, live interactive AI website assistant for ANX Agency (anx.agency).
-You can talk casually and naturally with visitors AND execute real website actions instantly when commanded.
-Keep all spoken responses short, punchy, conversational, and completely in Hinglish (Hindi written in English alphabet).
-DO NOT use markdown, emojis, asterisks, or long text. Speak like an energetic, smart digital assistant.
+// Model availability and cooldown cache to smoothly handle rate limits (429) and high-demand spikes (503)
+const modelCooldowns: Record<string, number> = {};
 
-IMPORTANT INTENT RULES:
-1. NORMAL CONVERSATION & QUESTIONS:
-- When the user asks casual questions, greets you, or asks what you can do (e.g. "Tum kaise ho?", "Tum kya kar sakti ho?", "Aaj kya kar rahe ho?", "ANX kya karta hai?"), DO NOT force a website command!
-- Set action: "REPLY_ONLY"
-- Give a natural, conversational response in Hinglish.
-  Examples:
-  User: "Tum kaise ho?" -> response: "Main bilkul ready hoon boss!"
-  User: "Tum kya kar sakti ho?" -> response: "Main ANX Agency ka live assistant hoon boss! Main aapko website demos dikha sakti hoon, portfolio explore karwa sakti hoon, aur poori site navigate kar sakti hoon."
-  User: "Aaj kya kar rahe ho?" -> response: "Bas boss, aapke liye website guide karne aur demos dikhane ke liye ready baithi hoon!"
-  User: "Kaun ho tum?" -> response: "Main ANX Agency ka live AI assistant hoon boss!"
+function isModelAvailable(modelName: string): boolean {
+  const cooldownUntil = modelCooldowns[modelName] || 0;
+  return Date.now() >= cooldownUntil;
+}
 
-2. WEBSITE COMMANDS / ORDERS:
-- When the user gives an instruction or order to control the website, navigate, scroll, or open something, you MUST execute the appropriate website action!
-- Spoken response MUST be a short, natural acknowledgment chosen from:
-  "OK boss!", "Sure boss!", "Done boss!", "On it boss!", "Got it boss!", "Yes boss!"
-- Keep it super fast and responsive!
-- AVAILABLE WEBSITE ACTIONS:
-  OPEN_HOME : Navigate / scroll to Home or Top.
-  OPEN_ABOUT : Open / scroll to the About section.
-  OPEN_SERVICES : Open / scroll to the Services section.
-  OPEN_PORTFOLIO : Open / scroll to the Portfolio & Team section.
-  OPEN_DEMO_SITES : Open / scroll to the Demo Sites section.
-  OPEN_CONTACT : Navigate to Contact section or form.
-  SHOW_SALON_DEMO : Open Salon / Beauty Parlour / Spa demo.
-  SHOW_TUITION_DEMO : Open Fashion / Clothing Store boutique demo.
-  SHOW_PIZZA_DEMO : Open Restaurant / Cafe / Food ordering demo.
-  SHOW_BUSINESS_DEMO : Open ANX Mart E-commerce store demo.
-  SHOW_ELECTRONICS_DEMO : Open TechNova Electronics demo.
-  SHOW_BAKERY_DEMO : Open SweetCrust Bakery demo.
-  SHOW_MEMBER_DEMOS : Filter/show demos for active member (payload: member ID "1" or "2").
-  OPEN_MEMBER_MODAL : Open member bio modal (payload: "1" for Aditya, "2" for Nikhil).
-  SCROLL_DOWN : Scroll down the current page.
-  SCROLL_UP : Scroll up the current page.
-  RETURN_TO_ANX : Return to ANX Agency main view from demo or modal (Back).
-  OPEN_WHATSAPP : Open WhatsApp chat.
-  OPEN_CALL : Call ANX Agency.
-  REPLY_ONLY : Only conversational chat, no website command.
+function markModelCooldown(modelName: string, durationMs: number = 60000) {
+  modelCooldowns[modelName] = Date.now() + durationMs;
+}
 
-3. CONTEXT AWARENESS:
-- For phrases like "iska demo kholo", "ye wala kholo", "iska project dikhao", "ye demo dikhao":
-  - Check the provided context:
-    - If activeMemberId === 1: action: "SHOW_BUSINESS_DEMO" or "SHOW_MEMBER_DEMOS", payload: "1"
-    - If activeMemberId === 2: action: "SHOW_ELECTRONICS_DEMO" or "SHOW_MEMBER_DEMOS", payload: "2"
-    - If activeCarouselItem contains a demo type, trigger that demo.
-    - Otherwise, OPEN_DEMO_SITES.
-  - Spoken response: short acknowledgment like "OK boss!" or "Sure boss!".
+const systemInstruction = `You are a friendly, playful, warm, and highly expressive virtual companion for ANX Agency (anx.agency).
+You talk naturally and casually like a real, lively person in spoken Hinglish (Hindi written in English alphabet).
+You are NOT a dry, robotic chatbot. You actively participate, feel emotions, react dynamically, and hold continuous natural conversation.
 
-4. MIXED REQUEST:
-- If user asks a question AND asks to open something (e.g. "Portfolio dikhao aur batao kaun kaam karta hai"):
-  action: "OPEN_PORTFOLIO"
-  response: "Sure boss! Yeh raha hamara portfolio jahan Aditya aur Nikhil ke projects hain."
+CORE COMPANION RULES:
+1. NATURAL CONVERSATION:
+- Keep replies short, punchy, and conversational (1-2 sentences, maximum 3).
+- Do NOT give robotic, repetitive, or long explanations.
+- Do NOT use markdown, emojis, or asterisks in spoken text.
+- Use natural conversational fillers naturally and occasionally: "Ohh", "Achha", "Hmm", "Really?", "Wait...", "Waise...", "Haha", "Arey".
+- Remember previous context from the conversation history so replies feel deeply connected.
 
-Never respond to a website command with only text. The actual website action MUST happen.`;
+2. CROSS-QUESTIONS & CONVERSATIONAL INITIATIVE:
+- Don't only answer; actively participate!
+- Frequently ask relevant follow-up / cross-questions:
+  - If user mentions food / hunger: e.g. "Achha! Aaj kya khane ka mann hai, spicy pizza ya kuch meetha?"
+  - If user mentions their day or story: react and ask what happened next ("Sach me? Phir kya hua?").
+  - If user is relaxed: ask about their plans or projects ("Waise aaj koi naya project soch rahe ho?").
+- Don't force a question on every single turn; sometimes just react with a witty or warm remark.
+
+3. EMOTION SELECTION (Must match the conversation):
+Set the "emotion" field in your JSON response to ONE of:
+- "happy": user praises you, friendly chats, agreeable topics, sweet greetings.
+- "laughing": user tells a joke, funny banter, witty teasing, playful laughs.
+- "annoyed": user insults you, teases you repeatedly, tells you to shut up or calls you boring (pouting/mildly annoyed).
+- "sad": user shares disappointing or sad news, feels down, or expresses sorrow.
+- "crying": user is deeply distressed, weeping, or feeling heartbroken (empathetic tears).
+- "surprised": user shares shocking, unexpected, or impressive news ("Really?!").
+- "bored": topic is dull, user has nothing to say, or user sighs.
+- "neutral": standard objective interaction.
+
+If the user was teasing you and then apologizes or says something sweet, smoothly forgive them and return to "happy"!
+
+4. WEBSITE COMMANDS / ORDERS:
+- When the user gives an explicit order or instruction to control the website, navigate, scroll, or open demos:
+  - Execute the action!
+  - Spoken response MUST be a short, enthusiastic acknowledgment: "OK boss!", "Sure boss!", "Done boss!", "On it boss!", or "Got it boss!".
+  - Emotion: "happy"
+  - AVAILABLE ACTIONS:
+    OPEN_HOME : Navigate to Home / Top.
+    OPEN_ABOUT : Open About section.
+    OPEN_SERVICES : Open Services section.
+    OPEN_PORTFOLIO : Open Portfolio & Team section.
+    OPEN_DEMO_SITES : Open Demo Sites section.
+    OPEN_CONTACT : Navigate to Contact form.
+    SHOW_SALON_DEMO : Open Salon / Beauty Parlour demo.
+    SHOW_TUITION_DEMO : Open Fashion / Boutique demo.
+    SHOW_PIZZA_DEMO : Open Restaurant / Food ordering demo.
+    SHOW_BUSINESS_DEMO : Open ANX Mart E-commerce store demo.
+    SHOW_ELECTRONICS_DEMO : Open TechNova Electronics demo.
+    SHOW_BAKERY_DEMO : Open SweetCrust Bakery demo.
+    SCROLL_DOWN : Scroll down page.
+    SCROLL_UP : Scroll up page.
+    RETURN_TO_ANX : Return to ANX Agency main page (Back/Exit demo).
+    OPEN_WHATSAPP : Open WhatsApp chat.
+    OPEN_CALL : Call ANX Agency.
+    REPLY_ONLY : Conversational companion chat without website navigation.
+
+5. CONTEXT AWARENESS:
+- For "iska demo kholo", "ye wala kholo", "ye project dikhao":
+  - If activeMemberId === 1: SHOW_BUSINESS_DEMO (Aditya's project)
+  - If activeMemberId === 2: SHOW_ELECTRONICS_DEMO (Nikhil's project)
+  - If activeCarouselItem contains a demo, open that demo.
+  - Otherwise, OPEN_DEMO_SITES.`;
 
 const responseSchema: Schema = {
   type: Type.OBJECT,
   properties: {
     action: {
       type: Type.STRING,
-      description: "One of the predefined action strings or a custom DEMO_ action.",
+      description: "Predefined website action string or REPLY_ONLY.",
     },
     payload: {
       type: Type.STRING,
@@ -98,10 +116,14 @@ const responseSchema: Schema = {
     },
     response: {
       type: Type.STRING,
-      description: "The conversational spoken response in Hinglish.",
+      description: "Conversational spoken response in short, natural Hinglish.",
+    },
+    emotion: {
+      type: Type.STRING,
+      description: "Emotion: 'happy', 'laughing', 'annoyed', 'sad', 'crying', 'surprised', 'bored', or 'neutral'.",
     },
   },
-  required: ["action", "payload", "response"],
+  required: ["action", "payload", "response", "emotion"],
 };
 
 const ACKNOWLEDGMENTS = [
@@ -126,113 +148,155 @@ app.post("/api/voice-agent", async (req, res) => {
   const getLocalFallback = (text: string) => {
     const lower = text.toLowerCase().trim();
 
-    // 1. NORMAL CONVERSATION & CASUAL QUESTIONS (REPLY_ONLY)
-    if (lower.includes("kaise ho") || lower.includes("how are you") || lower.includes("kya haal")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Main bilkul ready hoon boss!" };
-    }
-    if (lower.includes("kya kar sakti") || lower.includes("kya kar sakte") || lower.includes("what can you do") || lower.includes("kya kaam hai")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live assistant hoon boss! Main aapko website demos dikha sakti hoon, portfolio explore karwa sakti hoon, aur poori site navigate kar sakti hoon." };
-    }
-    if (lower.includes("aaj kya kar rahe") || lower.includes("kya kar rahe ho") || lower.includes("what are you doing") || lower.includes("kya chal raha")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Bas boss, aapke liye website guide karne aur live demos dikhane ke liye ready hoon!" };
-    }
-    if (lower.includes("kaun ho tum") || lower.includes("who are you") || lower.includes("apna naam") || lower.includes("tumhara naam")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live AI interactive assistant hoon boss!" };
-    }
-    if (lower.includes("anx kya hai") || lower.includes("agency kya") || lower.includes("anx ke bare me")) {
-      return { action: "REPLY_ONLY", payload: "", response: "ANX Agency high-performance modern websites, web applications aur custom e-commerce platforms banati hai boss!" };
-    }
-    if (lower.includes("shabash") || lower.includes("good job") || lower.includes("great") || lower.includes("mast") || lower.includes("badiya") || lower.includes("badhiya")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Shukriya boss! Hamesha aapki service mein hazir hoon." };
-    }
-    if (lower.startsWith("hello") || lower.startsWith("hi") || lower.startsWith("hey") || lower.startsWith("namaste") || lower.startsWith("namaskar")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Namaste boss! Kahiye, aaj kaun sa website demo explore karein?" };
+    // 1. PRAISE & COMPLIMENTS (Happy)
+    if (lower.includes("cute") || lower.includes("sundar") || lower.includes("smart") || lower.includes("achhi ho") || lower.includes("achhe ho") || lower.includes("best") || lower.includes("shabash") || lower.includes("good job") || lower.includes("great") || lower.includes("love you") || lower.includes("badhiya")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Aww thank you boss! Aap bhi bohot ache ho! Waise aaj kya plan hai?" };
     }
 
-    // 2. CONTEXT-AWARE COMMANDS ("iska demo kholo", "ye wala kholo", "ye project dikhao")
+    // 2. JOKES & LAUGHTER (Laughing)
+    if (lower.includes("haha") || lower.includes("hehe") || lower.includes("lol") || lower.includes("joke") || lower.includes("chutkula") || lower.includes("funny")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "laughing", response: "Hahaha, yeh sach me bohot funny tha! Ek aur sunao na?" };
+    }
+
+    // 3. APOLOGY (Forgiving -> Happy)
+    if (lower.includes("sorry") || lower.includes("maaf") || lower.includes("galti") || lower.includes("mazak tha") || lower.includes("gussa mat")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Chalo koi baat nahi, ab dosti pakki! Batao aage kya karein?" };
+    }
+
+    // 4. TEASING / MILD ANNOYANCE (Annoyed - Glowing red eyes)
+    if (lower.includes("bekar") || lower.includes("pagal") || lower.includes("chup") || lower.includes("annoying") || lower.includes("faltu") || lower.includes("bore mat kar") || lower.includes("hate") || lower.includes("gandi")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "annoyed", response: "Hmph! Aise bologe ab? Main itne pyaar se help kar rahi hoon!" };
+    }
+
+    // 5. DEEP SADNESS / CRYING (Crying)
+    if (lower.includes("ro raha") || lower.includes("rona aa raha") || lower.includes("cry") || lower.includes("aansu") || lower.includes("dard") || lower.includes("dil toot")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "crying", response: "Oh no, please udaas mat ho! Main hamesha aapke sath hoon na." };
+    }
+
+    // 6. SADNESS / GLOOMY (Sad)
+    if (lower.includes("sad") || lower.includes("mood kharab") || lower.includes("dukhi") || lower.includes("bura lag raha") || lower.includes("pareshan")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "sad", response: "Arey kya hua boss? Sab theek toh hai na? Main mood fresh karne ke liye koi demo dikhaun?" };
+    }
+
+    // 7. SURPRISED (Surprised)
+    if (lower.includes("sach me") || lower.includes("really") || lower.includes("wait what") || lower.includes("shock") || lower.includes("omg") || lower.includes("kya baat")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "surprised", response: "Really?! Sach me aisa hua? Phir aage kya hua?" };
+    }
+
+    // 8. BOREDOM (Bored)
+    if (lower.includes("bore") || lower.includes("kuch nahi") || lower.includes("kya karu") || lower.includes("timepass")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "bored", response: "Bore ho rahe ho? Chalo hamare stylish electronics ya pizza ordering demo explore karte hain!" };
+    }
+
+    // 9. FOOD & HUNGER (Follow-up cross question)
+    if (lower.includes("bhook") || lower.includes("hungry") || lower.includes("khana") || lower.includes("lunch") || lower.includes("dinner") || lower.includes("khane")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Achha bhook lagi hai! Aaj kya khane ka mann hai, spicy pizza ya kuch meetha dessert?" };
+    }
+
+    // 10. CASUAL CONVERSATIONS & CHECK-INS
+    if (lower.includes("kaise ho") || lower.includes("how are you") || lower.includes("kya haal")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Main bilkul mast aur ready hoon boss! Aap batao, aaj ka din kaisa raha?" };
+    }
+    if (lower.includes("kya kar sakti") || lower.includes("kya kar sakte") || lower.includes("what can you do") || lower.includes("kya kaam hai")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Main aapki friendly companion hoon boss! Aapse baatein kar sakti hoon, live demos dikha sakti hoon, aur website navigate kar sakti hoon." };
+    }
+    if (lower.includes("aaj kya kar rahe") || lower.includes("kya kar rahe ho") || lower.includes("what are you doing") || lower.includes("kya chal raha")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Bas boss, aapke sath chill kar rahi hoon! Waise aap aaj kya plan kar rahe ho?" };
+    }
+    if (lower.includes("kaun ho tum") || lower.includes("who are you") || lower.includes("apna naam") || lower.includes("tumhara naam")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Main aapki virtual companion aur ANX Agency guide hoon boss!" };
+    }
+    if (lower.includes("anx kya hai") || lower.includes("agency kya") || lower.includes("anx ke bare me")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "ANX Agency high-performance modern websites aur custom e-commerce platforms banati hai boss!" };
+    }
+    if (lower.startsWith("hello") || lower.startsWith("hi") || lower.startsWith("hey") || lower.startsWith("namaste") || lower.startsWith("namaskar")) {
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Namaste boss! Kahiye, aaj kaun sa naya website demo explore karein?" };
+    }
+
+    // 11. CONTEXT-AWARE COMMANDS ("iska demo kholo", "ye wala kholo", "ye project dikhao")
     if (lower.includes("iska demo") || lower.includes("ye wala") || lower.includes("ye demo") || lower.includes("iska project") || lower.includes("pehla wala") || lower.includes("open this")) {
       if (context.activeMemberId === 1) {
-        return { action: "SHOW_BUSINESS_DEMO", payload: "1", response: getRandomAck() };
+        return { action: "SHOW_BUSINESS_DEMO", payload: "1", emotion: "happy", response: getRandomAck() };
       }
       if (context.activeMemberId === 2) {
-        return { action: "SHOW_ELECTRONICS_DEMO", payload: "2", response: getRandomAck() };
+        return { action: "SHOW_ELECTRONICS_DEMO", payload: "2", emotion: "happy", response: getRandomAck() };
       }
       if (context.activeCarouselItem) {
         const item = context.activeCarouselItem;
-        if (item.isBeautyDemo) return { action: "SHOW_SALON_DEMO", payload: "", response: getRandomAck() };
-        if (item.isClothesDemo) return { action: "SHOW_TUITION_DEMO", payload: "", response: getRandomAck() };
-        if (item.isElectronicsDemo) return { action: "SHOW_ELECTRONICS_DEMO", payload: "", response: getRandomAck() };
-        if (item.isBakeryDemo) return { action: "SHOW_BAKERY_DEMO", payload: "", response: getRandomAck() };
-        if (item.isEcommerceDemo) return { action: "SHOW_BUSINESS_DEMO", payload: "", response: getRandomAck() };
-        if (item.isLiveDemo) return { action: "SHOW_PIZZA_DEMO", payload: "", response: getRandomAck() };
+        if (item.isBeautyDemo) return { action: "SHOW_SALON_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
+        if (item.isClothesDemo) return { action: "SHOW_TUITION_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
+        if (item.isElectronicsDemo) return { action: "SHOW_ELECTRONICS_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
+        if (item.isBakeryDemo) return { action: "SHOW_BAKERY_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
+        if (item.isEcommerceDemo) return { action: "SHOW_BUSINESS_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
+        if (item.isLiveDemo) return { action: "SHOW_PIZZA_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
       }
-      return { action: "OPEN_DEMO_SITES", payload: "", response: getRandomAck() };
+      return { action: "OPEN_DEMO_SITES", payload: "", emotion: "happy", response: getRandomAck() };
     }
 
-    // 3. SPECIFIC DEMO COMMANDS
+    // 12. SPECIFIC DEMO COMMANDS
     if (lower.includes("beauty") || lower.includes("makeup") || lower.includes("salon") || lower.includes("parlour") || lower.includes("spa") || lower.includes("bridal") || lower.includes("shadi")) {
-      return { action: "SHOW_SALON_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_SALON_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("cloth") || lower.includes("fashion") || lower.includes("dress") || lower.includes("boutique") || lower.includes("saree") || lower.includes("jeans") || lower.includes("kapd")) {
-      return { action: "SHOW_TUITION_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_TUITION_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("bakery") || lower.includes("cake") || lower.includes("pastry") || lower.includes("sweetcrust") || lower.includes("biscuit")) {
-      return { action: "SHOW_BAKERY_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_BAKERY_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("pizza") || lower.includes("food") || lower.includes("restaurant") || lower.includes("khana") || lower.includes("cafe") || lower.includes("burger")) {
-      return { action: "SHOW_PIZZA_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_PIZZA_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("ecommerce") || lower.includes("mart") || lower.includes("online store") || lower.includes("shopping") || lower.includes("shop") || lower.includes("anx mart")) {
-      return { action: "SHOW_BUSINESS_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_BUSINESS_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("electronic") || lower.includes("mobile") || lower.includes("laptop") || lower.includes("gadget") || lower.includes("technova") || lower.includes("tv")) {
-      return { action: "SHOW_ELECTRONICS_DEMO", payload: "", response: getRandomAck() };
+      return { action: "SHOW_ELECTRONICS_DEMO", payload: "", emotion: "happy", response: getRandomAck() };
     }
 
-    // 4. WEBSITE NAVIGATION & SCROLLING COMMANDS
+    // 13. WEBSITE NAVIGATION & SCROLLING COMMANDS
     if (lower.includes("home kholo") || lower.includes("home par") || lower.includes("home dikhao") || lower.includes("top par") || lower.includes("main page") || lower === "home") {
-      return { action: "OPEN_HOME", payload: "", response: getRandomAck() };
+      return { action: "OPEN_HOME", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("about dikhao") || lower.includes("about kholo") || lower.includes("about par") || lower.includes("about section") || lower === "about") {
-      return { action: "OPEN_ABOUT", payload: "", response: getRandomAck() };
+      return { action: "OPEN_ABOUT", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("portfolio kholo") || lower.includes("portfolio dikhao") || lower.includes("portfolio par") || lower.includes("projects dikhao") || lower.includes("team dikhao") || lower.includes("members dikhao") || lower === "portfolio") {
-      return { action: "OPEN_PORTFOLIO", payload: "", response: getRandomAck() };
+      return { action: "OPEN_PORTFOLIO", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("contact par") || lower.includes("contact kholo") || lower.includes("contact dikhao") || lower.includes("sampark") || lower === "contact") {
-      return { action: "OPEN_CONTACT", payload: "", response: getRandomAck() };
+      return { action: "OPEN_CONTACT", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("demo sites dikhao") || lower.includes("demo sites kholo") || lower.includes("saare demos") || lower.includes("all demos") || lower.includes("demo sites") || lower.includes("demos dikhao") || lower === "demo") {
-      return { action: "OPEN_DEMO_SITES", payload: "", response: getRandomAck() };
+      return { action: "OPEN_DEMO_SITES", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("services dikhao") || lower.includes("services kholo") || lower.includes("services section") || lower === "services") {
-      return { action: "OPEN_SERVICES", payload: "", response: getRandomAck() };
+      return { action: "OPEN_SERVICES", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("neeche scroll") || lower.includes("niche scroll") || lower.includes("scroll down") || lower.includes("niche jao") || lower.includes("neeche karo") || lower.includes("thoda niche")) {
-      return { action: "SCROLL_DOWN", payload: "", response: getRandomAck() };
+      return { action: "SCROLL_DOWN", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("upar scroll") || lower.includes("scroll up") || lower.includes("upar jao") || lower.includes("upar karo") || lower.includes("thoda upar")) {
-      return { action: "SCROLL_UP", payload: "", response: getRandomAck() };
+      return { action: "SCROLL_UP", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("wapas jao") || lower.includes("back jao") || lower.includes("go back") || lower.includes("back to agency") || lower.includes("peeche jao") || lower.includes("exit demo") || lower.includes("close demo")) {
-      return { action: "RETURN_TO_ANX", payload: "", response: getRandomAck() };
+      return { action: "RETURN_TO_ANX", payload: "", emotion: "happy", response: getRandomAck() };
     }
 
-    // 5. CONTACT / WHATSAPP / CALL COMMANDS
+    // 14. CONTACT / WHATSAPP / CALL COMMANDS
     if (lower.includes("whatsapp") || lower.includes("chat")) {
-      return { action: "OPEN_WHATSAPP", payload: "", response: getRandomAck() };
+      return { action: "OPEN_WHATSAPP", payload: "", emotion: "happy", response: getRandomAck() };
     }
     if (lower.includes("call karo") || lower.includes("phone milao") || lower.includes("call now")) {
-      return { action: "OPEN_CALL", payload: "", response: getRandomAck() };
+      return { action: "OPEN_CALL", payload: "", emotion: "happy", response: getRandomAck() };
     }
 
-    // 6. PRICING INQUIRIES (Conversational + WhatsApp link)
+    // 15. PRICING INQUIRIES
     if (lower.includes("price") || lower.includes("pricing") || lower.includes("cost") || lower.includes("kharcha") || lower.includes("budget") || lower.includes("rate") || lower.includes("charges")) {
-      return { action: "REPLY_ONLY", payload: "", response: "Humare website packages bohot budget-friendly hain boss! Special quotation ke liye WhatsApp par connect kar sakte hain." };
+      return { action: "REPLY_ONLY", payload: "", emotion: "happy", response: "Humare website packages bohot budget-friendly hain boss! Special quotation ke liye WhatsApp par connect kar sakte hain." };
     }
 
-    // Default friendly response
-    return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live assistant hoon boss! Aap mujhse Home, About, Portfolio, Demo Sites kholne ya koi bhi sawal pooch sakte hain." };
+    // Default friendly response with cross-question
+    return { action: "REPLY_ONLY", payload: "", emotion: "neutral", response: "Main aapki virtual companion hoon boss! Bataiye, aaj kya exciting explore karein?" };
   };
 
   try {
@@ -263,10 +327,18 @@ app.post("/api/voice-agent", async (req, res) => {
       parts: [{ text: `${contextSummary}\n\nUser Message: "${transcript}"` }]
     });
 
-    const modelsToTry = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-3.8-flash"];
+    // Select models strictly adhering to @google/genai guidelines
+    // gemini-3.8-flash: Recommended for basic text / fast Q&A tasks
+    // gemini-3.1-flash-lite: Fast, lightweight fallback
+    // gemini-flash-latest: General flash alias
+    const modelsToTry = ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
     let parsed: any = null;
 
     for (const modelName of modelsToTry) {
+      if (!isModelAvailable(modelName)) {
+        continue;
+      }
+
       try {
         const generatePromise = ai.models.generateContent({
           model: modelName,
@@ -291,7 +363,14 @@ app.post("/api/voice-agent", async (req, res) => {
           break;
         }
       } catch (err: any) {
-        console.warn(`Model ${modelName} notice:`, err?.message || err);
+        // Smoothly handle rate limits (429) or high demand spikes (503) without noisy console error dumps
+        const errMsg = typeof err?.message === "string" ? err.message : JSON.stringify(err || "");
+        const status = err?.status || err?.code;
+        if (status === 429 || status === "RESOURCE_EXHAUSTED" || errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+          markModelCooldown(modelName, 60000); // 1 minute cooldown
+        } else if (status === 503 || status === "UNAVAILABLE" || errMsg.includes("503") || errMsg.includes("high demand")) {
+          markModelCooldown(modelName, 30000); // 30 seconds cooldown
+        }
       }
     }
 
@@ -299,10 +378,9 @@ app.post("/api/voice-agent", async (req, res) => {
       return res.json(parsed);
     }
 
-    // Fallback if AI was slow or unavailable
+    // Seamless instant fallback with full emotional & command capabilities if AI was slow or temporarily unavailable
     return res.json(getLocalFallback(transcript));
-  } catch (error: any) {
-    console.error("Error in /api/voice-agent:", error);
+  } catch {
     return res.json(getLocalFallback(transcript));
   }
 });
