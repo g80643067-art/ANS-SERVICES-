@@ -122,7 +122,7 @@ export function ANX3DShowcaseSection({
   onOpenDemoModal,
 }: ANX3DShowcaseSectionProps) {
   return (
-    <section id="slider-showcase" className="relative py-16 bg-[#080709] border-y border-purple-500/20 overflow-hidden">
+    <section id="demo-sites" className="relative py-16 bg-[#080709] border-y border-purple-500/20 overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[450px] bg-gradient-to-r from-purple-600/10 via-amber-600/10 to-blue-600/10 blur-[150px] pointer-events-none -z-0" />
 

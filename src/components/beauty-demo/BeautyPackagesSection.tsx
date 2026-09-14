@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Check, Crown, Star, ArrowRight } from "lucide-react";
+import { Sparkles, Check, Crown, ArrowRight } from "lucide-react";
 import { BRIDAL_PACKAGES, BridalPackage } from "@/data/beautyDemoData";
 
 interface BeautyPackagesSectionProps {
@@ -46,7 +46,7 @@ export function BeautyPackagesSection({
               {/* Popular Badge */}
               {pkg.isPopular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#d4af37] via-[#f3e5ab] to-[#c5a059] text-[#1c120c] text-[11px] font-extrabold uppercase tracking-widest px-4 py-1 rounded-full shadow-md flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 fill-[#1c120c]" />
+                  <Crown className="w-3.5 h-3.5 text-[#1c120c]" />
                   <span>MOST POPULAR CHOICE</span>
                 </div>
               )}

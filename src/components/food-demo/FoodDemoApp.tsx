@@ -40,6 +40,26 @@ export function FoodDemoApp({ onBackToAgency }: FoodDemoAppProps) {
   ]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  React.useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      if (act.includes("menu")) {
+        document.getElementById("food-menu")?.scrollIntoView({ behavior: "smooth" });
+      } else if (act.includes("about")) {
+        document.getElementById("food-about")?.scrollIntoView({ behavior: "smooth" });
+      } else if (act.includes("contact")) {
+        document.getElementById("food-contact")?.scrollIntoView({ behavior: "smooth" });
+      } else if (act.includes("cart") || act.includes("order") || act.includes("checkout")) {
+        setIsCartOpen(true);
+      } else if (act.includes("close") && isCartOpen) {
+        setIsCartOpen(false);
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+    return () => window.removeEventListener("AGENT_ACTION", handleAgentAction);
+  }, [isCartOpen]);
+
   const handleAddToCart = (item: FoodItem) => {
     setCartItems((prev) => {
       const existing = prev.find((ci) => ci.food.id === item.id);

@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
 import { ANX3DShowcaseSection } from "./components/ANX3DShowcaseSection";
+import { DemoSitesSection } from "./components/DemoSitesSection";
 import { ServicesSection } from "./components/ServicesSection";
 import { AboutSection } from "./components/AboutSection";
 import { PortfolioSection } from "./components/PortfolioSection";
 import { ContactSection } from "./components/ContactSection";
 import { DemoModal } from "./components/DemoModal";
-import { FloatingActionDock } from "./components/FloatingActionDock";
 import { Footer } from "./components/Footer";
 import { FoodDemoApp } from "./components/food-demo/FoodDemoApp";
 import { BeautyDemoApp } from "./components/beauty-demo/BeautyDemoApp";
@@ -15,6 +15,7 @@ import { ClothesDemoApp } from "./components/clothes-demo/ClothesDemoApp";
 import { TechNovaDemoApp } from "./components/technova-demo/TechNovaDemoApp";
 import { SweetCrustBakeryApp } from "./components/bakery-demo/SweetCrustBakeryApp";
 import { AnxMartEcommerceApp } from "./components/ecommerce-demo/AnxMartEcommerceApp";
+import { VoiceAgent } from "./components/voice/VoiceAgent";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"agency" | "food-demo" | "beauty-demo" | "clothes-demo" | "electronics-demo" | "bakery-demo" | "ecommerce-demo">(() => {
@@ -124,6 +125,99 @@ export default function App() {
     }
   };
 
+  const handleVoiceAction = (action: string, payload: string) => {
+    // Utility for demo launch
+    const openDemo = (demo: string) => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setCurrentView(`${demo}-demo` as any);
+      if (window.history.pushState) window.history.pushState(null, "", `?demo=${demo}`);
+    };
+
+    // Utility for section navigation
+    const navSection = (id: string) => {
+      if (currentView !== "agency") {
+        setCurrentView("agency");
+        if (window.history.pushState) window.history.pushState(null, "", window.location.pathname);
+      }
+      setTimeout(() => {
+        if (id === "top") window.scrollTo({ top: 0, behavior: "smooth" });
+        else document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    };
+
+    switch(action) {
+      case "SHOW_PIZZA_DEMO":
+        openDemo("food");
+        break;
+      case "SHOW_SALON_DEMO":
+        openDemo("beauty");
+        break;
+      case "SHOW_BUSINESS_DEMO":
+        openDemo("ecommerce"); // Mapped to ecommerce for now
+        break;
+      case "SHOW_TUITION_DEMO":
+        openDemo("clothes"); // Example map
+        break;
+      case "SHOW_ELECTRONICS_DEMO":
+        openDemo("electronics");
+        break;
+      case "SHOW_BAKERY_DEMO":
+        openDemo("bakery");
+        break;
+      case "OPEN_HOME":
+        navSection("top");
+        break;
+      case "OPEN_ABOUT":
+        navSection("about");
+        break;
+      case "OPEN_SERVICES":
+        navSection("services");
+        break;
+      case "OPEN_PORTFOLIO":
+        navSection("portfolio");
+        break;
+      case "OPEN_DEMO_SITES":
+        navSection("demo-sites");
+        break;
+      case "SHOW_MEMBER_DEMOS":
+        if (payload) {
+          window.dispatchEvent(new CustomEvent("FILTER_DEMO_SITES", { detail: { memberId: parseInt(payload) } }));
+        } else {
+          navSection("demo-sites");
+        }
+        break;
+      case "OPEN_CONTACT":
+        navSection("contact");
+        break;
+      case "NEXT_SECTION":
+        // simple scroll to next relevant section logic
+        window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+        break;
+      case "SCROLL_TOP":
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        break;
+      case "SCROLL_DOWN":
+        window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+        break;
+      case "OPEN_MENU":
+        window.dispatchEvent(new CustomEvent("ANX_MENU_TOGGLE", { detail: { action: 'OPEN' } }));
+        break;
+      case "CLOSE_MENU":
+        window.dispatchEvent(new CustomEvent("ANX_MENU_TOGGLE", { detail: { action: 'CLOSE' } }));
+        break;
+      case "OPEN_WHATSAPP":
+        window.open("https://wa.me/919219694862?text=Hello%20ANX,%20I%20want%20to%20get%20a%20website", "_blank");
+        break;
+      case "RETURN_TO_ANX":
+        handleBackToAgency();
+        break;
+      default:
+        // Broadcast any unhandled or demo-specific actions globally for demos to pick up
+        window.dispatchEvent(new CustomEvent("AGENT_ACTION", { detail: { action, payload } }));
+        break;
+    }
+  };
+
   const handleBackToAgency = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setCurrentView("agency");
@@ -144,95 +238,94 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // If in E-Commerce Demo View, render the complete ANX MART e-commerce store!
-  if (currentView === "ecommerce-demo") {
-    return <AnxMartEcommerceApp onBackToAgency={handleBackToAgency} />;
-  }
+  const renderActiveView = () => {
+    if (currentView === "ecommerce-demo") {
+      return <AnxMartEcommerceApp onBackToAgency={handleBackToAgency} />;
+    }
+    if (currentView === "bakery-demo") {
+      return <SweetCrustBakeryApp onBackToAgency={handleBackToAgency} />;
+    }
+    if (currentView === "electronics-demo") {
+      return <TechNovaDemoApp onBackToAgency={handleBackToAgency} />;
+    }
+    if (currentView === "clothes-demo") {
+      return <ClothesDemoApp onBackToAgency={handleBackToAgency} />;
+    }
+    if (currentView === "beauty-demo") {
+      return <BeautyDemoApp onBackToAgency={handleBackToAgency} />;
+    }
+    if (currentView === "food-demo") {
+      return <FoodDemoApp onBackToAgency={handleBackToAgency} />;
+    }
 
-  // If in Bakery Demo View, render the complete SWEET CRUST bakery store!
-  if (currentView === "bakery-demo") {
-    return <SweetCrustBakeryApp onBackToAgency={handleBackToAgency} />;
-  }
+    return (
+      <div className="relative min-h-screen bg-[#080808] text-white selection:bg-[#7C3AED]/30 selection:text-purple-200 overflow-x-hidden">
+        {/* Subtle Dark Ambient Gradients for Depth */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-[#7C3AED]/10 rounded-full blur-[140px]" />
+          <div className="absolute top-[30%] right-[-10%] w-[600px] h-[600px] bg-[#7C3AED]/5 rounded-full blur-[160px]" />
+          <div className="absolute bottom-[20%] left-[-10%] w-[600px] h-[600px] bg-[#7C3AED]/10 rounded-full blur-[160px]" />
+        </div>
 
-  // If in Electronics Demo View, render the complete TECHNOVA premium electronics store!
-  if (currentView === "electronics-demo") {
-    return <TechNovaDemoApp onBackToAgency={handleBackToAgency} />;
-  }
-
-  // If in Clothes Demo View, render the complete NOVA WEAR luxury fashion store!
-  if (currentView === "clothes-demo") {
-    return <ClothesDemoApp onBackToAgency={handleBackToAgency} />;
-  }
-
-  // If in Beauty Demo View, render the complete Bridal Salon & Spa website!
-  if (currentView === "beauty-demo") {
-    return <BeautyDemoApp onBackToAgency={handleBackToAgency} />;
-  }
-
-  // If in Food Demo View, render the complete working restaurant website!
-  if (currentView === "food-demo") {
-    return <FoodDemoApp onBackToAgency={handleBackToAgency} />;
-  }
-
-  // Otherwise, render the ANX Agency website with the 3D coverflow slider & showcase
-  return (
-    <div className="relative min-h-screen bg-[#080808] text-white selection:bg-[#7C3AED]/30 selection:text-purple-200 overflow-x-hidden">
-      {/* Subtle Dark Ambient Gradients for Depth */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-[#7C3AED]/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[30%] right-[-10%] w-[600px] h-[600px] bg-[#7C3AED]/5 rounded-full blur-[160px]" />
-        <div className="absolute bottom-[20%] left-[-10%] w-[600px] h-[600px] bg-[#7C3AED]/10 rounded-full blur-[160px]" />
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Navbar
-          onOpenDemo={() => handleOpenDemoWithService()}
-          onOpenContact={handleScrollToContact}
-        />
-
-        <main className="flex-grow">
-          <Hero
+        {/* Main Content */}
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <Navbar
             onOpenDemo={() => handleOpenDemoWithService()}
             onOpenContact={handleScrollToContact}
-            onScrollToServices={handleScrollToServices}
           />
 
-          {/* 3D Coverflow Carousel Section on ANX Frontend */}
-          <ANX3DShowcaseSection
-            onLaunchFoodDemo={handleLaunchFoodDemo}
-            onLaunchBeautyDemo={handleLaunchBeautyDemo}
-            onLaunchClothesDemo={handleLaunchClothesDemo}
-            onLaunchElectronicsDemo={handleLaunchElectronicsDemo}
-            onLaunchBakeryDemo={handleLaunchBakeryDemo}
-            onLaunchEcommerceDemo={handleLaunchEcommerceDemo}
-            onOpenDemoModal={(serviceName) => handleOpenDemoWithService(serviceName)}
+          <main className="flex-grow">
+            <Hero
+              onOpenDemo={() => handleOpenDemoWithService()}
+              onOpenContact={handleScrollToContact}
+              onScrollToServices={handleScrollToServices}
+            />
+
+            {/* 3D Coverflow Carousel Section on ANX Frontend */}
+            <ANX3DShowcaseSection
+              onLaunchFoodDemo={handleLaunchFoodDemo}
+              onLaunchBeautyDemo={handleLaunchBeautyDemo}
+              onLaunchClothesDemo={handleLaunchClothesDemo}
+              onLaunchElectronicsDemo={handleLaunchElectronicsDemo}
+              onLaunchBakeryDemo={handleLaunchBakeryDemo}
+              onLaunchEcommerceDemo={handleLaunchEcommerceDemo}
+              onOpenDemoModal={(serviceName) => handleOpenDemoWithService(serviceName)}
+            />
+
+            <ServicesSection
+              onSelectServiceForDemo={(serviceName) => handleOpenDemoWithService(serviceName)}
+            />
+
+            <AboutSection onOpenDemo={() => handleOpenDemoWithService()} />
+
+            <PortfolioSection />
+
+            <DemoSitesSection 
+              onLaunchDemoAction={handleVoiceAction} 
+            />
+
+            <ContactSection />
+          </main>
+
+          <Footer
+            onOpenDemo={() => handleOpenDemoWithService()}
+            onScrollToTop={handleScrollToTop}
           />
+        </div>
 
-          <ServicesSection
-            onSelectServiceForDemo={(serviceName) => handleOpenDemoWithService(serviceName)}
-          />
-
-          <AboutSection onOpenDemo={() => handleOpenDemoWithService()} />
-
-          <PortfolioSection />
-
-          <ContactSection />
-        </main>
-
-        <Footer
-          onOpenDemo={() => handleOpenDemoWithService()}
-          onScrollToTop={handleScrollToTop}
+        <DemoModal
+          isOpen={demoOpen}
+          onClose={() => setDemoOpen(false)}
+          preselectedService={selectedService}
         />
-
-        <FloatingActionDock onOpenDemo={() => handleOpenDemoWithService()} />
       </div>
+    );
+  };
 
-      <DemoModal
-        isOpen={demoOpen}
-        onClose={() => setDemoOpen(false)}
-        preselectedService={selectedService}
-      />
-    </div>
+  return (
+    <>
+      {renderActiveView()}
+      <VoiceAgent onAction={handleVoiceAction} />
+    </>
   );
 }

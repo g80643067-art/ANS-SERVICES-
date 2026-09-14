@@ -3,7 +3,6 @@ import {
   Search,
   Plus,
   Minus,
-  Star,
   Flame,
   Clock,
   Sparkles,
@@ -233,7 +232,7 @@ export function FoodMenuSection({
                     {/* Bottom overlay info: Rating & Time */}
                     <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-900/90 text-amber-300 font-bold border border-zinc-800">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <Flame className="w-3 h-3 fill-amber-400 text-amber-400" />
                         <span>{item.rating}</span>
                         <span className="text-zinc-500 text-[10px]">({item.reviewCount})</span>
                       </span>

@@ -5,7 +5,6 @@ import {
   Sparkles,
   ShoppingBag,
   ArrowRight,
-  Star,
   Clock,
   ShieldCheck,
   Phone,
@@ -42,7 +41,7 @@ export function FoodHero({ onExploreMenu, onOrderNow }: FoodHeroProps) {
               </span>
 
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-800">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <strong className="text-white">4.9</strong> (1.2k+ Reviews)
               </span>
             </div>

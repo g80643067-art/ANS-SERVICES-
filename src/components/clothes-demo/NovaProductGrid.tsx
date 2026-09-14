@@ -3,7 +3,6 @@ import {
   Heart,
   Eye,
   ShoppingBag,
-  Star,
   SlidersHorizontal,
   Sparkles,
   Check,
@@ -275,7 +274,7 @@ export function NovaProductGrid({
                           {product.subtitle}
                         </span>
                         <div className="flex items-center gap-1 text-amber-400 text-xs font-bold shrink-0">
-                          <Star className="w-3 h-3 fill-current" />
+                          <Sparkles className="w-3 h-3 text-amber-400" />
                           <span>{product.rating}</span>
                           <span className="text-zinc-500 font-normal text-[10px]">({product.reviewsCount})</span>
                         </div>

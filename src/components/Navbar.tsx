@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Phone, MessageCircle, Menu, X, Sparkles, ArrowRight, Utensils } from "lucide-react";
+import { Phone, MessageCircle, Menu, X, Sparkles, ArrowRight, Utensils, Bot } from "lucide-react";
 
 interface NavbarProps {
   onOpenDemo: () => void;
@@ -14,8 +14,22 @@ export function Navbar({ onOpenDemo, onOpenContact }: NavbarProps) {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
+    
+    const handleToggleMenu = (e: any) => {
+      if (e.detail?.action === "OPEN") {
+        setMobileMenuOpen(true);
+      } else if (e.detail?.action === "CLOSE") {
+        setMobileMenuOpen(false);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("ANX_MENU_TOGGLE", handleToggleMenu as any);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("ANX_MENU_TOGGLE", handleToggleMenu as any);
+    }
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -80,6 +94,15 @@ export function Navbar({ onOpenDemo, onOpenContact }: NavbarProps) {
           >
             <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
             <span>3D Slider</span>
+          </button>
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("ANX_OPEN_AGENT_SELECTOR"));
+            }}
+            className="px-3.5 py-1.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-colors rounded-full hover:bg-cyan-500/15 cursor-pointer flex items-center gap-1.5 border border-cyan-500/30"
+          >
+            <Bot className="w-3.5 h-3.5 text-cyan-400" />
+            <span>AI Agents</span>
           </button>
           <button
             onClick={() => scrollToSection("services")}

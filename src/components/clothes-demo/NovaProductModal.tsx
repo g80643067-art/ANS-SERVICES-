@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   X,
-  Star,
   Heart,
   ShoppingBag,
   ShieldCheck,
@@ -132,7 +131,7 @@ export function NovaProductModal({
                 </span>
 
                 <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
-                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>{product.rating}</span>
                   <span className="text-zinc-400 font-normal">({product.reviewsCount} reviews)</span>
                 </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Calendar, Award, Star, ShieldCheck, Heart, ArrowRight } from "lucide-react";
+import { Sparkles, Calendar, Award, ShieldCheck, Heart, ArrowRight } from "lucide-react";
 import { SALON_STATS } from "@/data/beautyDemoData";
 
 interface BeautyHeroProps {
@@ -106,7 +106,7 @@ export function BeautyHero({ onOpenBooking, onScrollToSection }: BeautyHeroProps
                       </h3>
                     </div>
                     <div className="flex items-center gap-1 bg-[#faede2] px-2.5 py-1 rounded-full text-xs font-bold text-[#8f5e3b]">
-                      <Star className="w-3.5 h-3.5 fill-[#8f5e3b] text-[#8f5e3b]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#8f5e3b]" />
                       <span>5.0</span>
                     </div>
                   </div>

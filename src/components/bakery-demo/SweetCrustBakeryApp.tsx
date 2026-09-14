@@ -63,10 +63,25 @@ export function SweetCrustBakeryApp({ onBackToAgency }: SweetCrustBakeryAppProps
   useEffect(() => {
     const originalTitle = document.title;
     document.title = "SWEET CRUST • Artisan Bakehouse & Patisserie";
+
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      
+      if (act.includes("cart") || act.includes("basket")) setIsCartOpen(true);
+      if (act.includes("close") && isCartOpen) setIsCartOpen(false);
+      if (act.includes("wishlist")) setIsWishlistOpen(true);
+      if (act.includes("menu") || act.includes("shop")) {
+        document.getElementById("full-menu")?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+
     return () => {
       document.title = originalTitle;
+      window.removeEventListener("AGENT_ACTION", handleAgentAction);
     };
-  }, []);
+  }, [isCartOpen, isWishlistOpen]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

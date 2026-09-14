@@ -38,6 +38,26 @@ export const AnxMartEcommerceApp: React.FC<AnxMartEcommerceAppProps> = ({ onBack
   const [checkoutDiscount, setCheckoutDiscount] = useState<number>(0);
   const [checkoutTotal, setCheckoutTotal] = useState<number>(0);
 
+  React.useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      
+      if (act.includes("cart") || act.includes("basket")) setCartOpen(true);
+      if (act.includes("close") && cartOpen) setCartOpen(false);
+      if (act.includes("checkout")) {
+        setCartOpen(false);
+        setCheckoutOpen(true);
+      }
+      if (act.includes("order")) setOrdersPageOpen(true);
+      if (act.includes("category") || act.includes("filter") || act.includes("shop")) {
+        document.getElementById("shop-section")?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+    return () => window.removeEventListener("AGENT_ACTION", handleAgentAction);
+  }, [cartOpen]);
+
   // Cart operations
   const handleAddToCart = (product: Product, quantity = 1, selectedSize?: string, selectedColor?: string) => {
     setCartItems(prev => {

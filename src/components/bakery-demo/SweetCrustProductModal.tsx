@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BakeryProduct, BakeryReview } from "./types";
-import { X, Star, ShoppingBag, Zap, Check, Heart, ShieldCheck, Clock, Award } from "lucide-react";
+import { X, ShoppingBag, Zap, Check, Heart, ShieldCheck, Clock, Award } from "lucide-react";
 
 interface SweetCrustProductModalProps {
   product: BakeryProduct | null;
@@ -117,13 +117,13 @@ export function SweetCrustProductModal({
             <div>
               {/* Star Rating & Category */}
               <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center text-amber-500">
+                <div className="flex items-center text-rose-500">
                   {[...Array(5)].map((_, i) => (
-                    <Star
+                    <Heart
                       key={i}
                       className={`w-4 h-4 ${
                         i < Math.floor(product.rating)
-                          ? "fill-amber-500 text-amber-500"
+                          ? "fill-rose-500 text-rose-500"
                           : "text-neutral-300"
                       }`}
                     />
@@ -270,10 +270,10 @@ export function SweetCrustProductModal({
                           onClick={() => setUserRating(star)}
                           className="cursor-pointer"
                         >
-                          <Star
+                          <Heart
                             className={`w-4 h-4 ${
                               star <= userRating
-                                ? "fill-amber-500 text-amber-500"
+                                ? "fill-rose-500 text-rose-500"
                                 : "text-neutral-300"
                             }`}
                           />
@@ -307,9 +307,9 @@ export function SweetCrustProductModal({
                         <span className="font-bold text-[#3C2415]">{rev.author}</span>
                         <span className="text-[10px] text-[#8A7565]">{rev.date}</span>
                       </div>
-                      <div className="flex items-center gap-0.5 text-amber-500 mb-1">
+                      <div className="flex items-center gap-0.5 text-rose-500 mb-1">
                         {[...Array(rev.rating)].map((_, i) => (
-                          <Star key={i} className="w-3 h-3 fill-amber-500" />
+                          <Heart key={i} className="w-3 h-3 fill-rose-500" />
                         ))}
                       </div>
                       <p className="text-[#6B5341]">{rev.comment}</p>

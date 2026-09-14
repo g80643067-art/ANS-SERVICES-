@@ -37,6 +37,25 @@ export function BeautyDemoApp({ onBackToAgency }: BeautyDemoAppProps) {
     handleScrollToSection("booking");
   };
 
+  React.useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      
+      if (act.includes("book") || act.includes("appointment")) {
+        handleScrollToSection("booking");
+      }
+      if (act.includes("service")) {
+        handleScrollToSection("beauty-services");
+      }
+      if (act.includes("gallery") || act.includes("portfolio")) {
+        handleScrollToSection("beauty-gallery");
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+    return () => window.removeEventListener("AGENT_ACTION", handleAgentAction);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#fdfcf9] text-[#231815] selection:bg-[#8f5e3b]/20 selection:text-[#523521] overflow-x-hidden font-sans">
       {/* Navigation */}

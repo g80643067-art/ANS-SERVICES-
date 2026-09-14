@@ -65,6 +65,22 @@ export function TechNovaDemoApp({ onBackToAgency }: TechNovaDemoAppProps) {
     }
   };
 
+  React.useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      
+      if (act.includes("cart") || act.includes("basket")) setCartOpen(true);
+      if (act.includes("close") && cartOpen) setCartOpen(false);
+      if (act.includes("wishlist")) setWishlistOpen(true);
+      if (act.includes("shop") || act.includes("product")) {
+        handleScrollToSection("shop-section");
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+    return () => window.removeEventListener("AGENT_ACTION", handleAgentAction);
+  }, [cartOpen, wishlistOpen]);
+
   // Cart operations
   const handleAddToCart = (product: ElectronicsProduct, variant?: ProductVariant, quantity: number = 1) => {
     const effectiveVariant = variant || (product.variants && product.variants[0] ? product.variants[0] : undefined);

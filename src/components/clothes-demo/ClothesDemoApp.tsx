@@ -54,6 +54,22 @@ export function ClothesDemoApp({ onBackToAgency }: ClothesDemoAppProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  React.useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { action } = e.detail;
+      const act = action.toLowerCase();
+      
+      if (act.includes("cart") || act.includes("bag")) setCartOpen(true);
+      if (act.includes("close") && cartOpen) setCartOpen(false);
+      if (act.includes("wishlist")) setWishlistOpen(true);
+      if (act.includes("shop") || act.includes("collection")) {
+        handleScrollToSection("shop");
+      }
+    };
+    window.addEventListener("AGENT_ACTION", handleAgentAction);
+    return () => window.removeEventListener("AGENT_ACTION", handleAgentAction);
+  }, [cartOpen, wishlistOpen]);
+
   // Add to cart handler
   const handleAddToCart = (
     product: Product,

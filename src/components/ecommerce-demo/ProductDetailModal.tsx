@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, Heart, ShoppingCart, Zap, Box, ShieldCheck, Truck, Plus, Minus, ArrowRight } from 'lucide-react';
+import { X, Heart, ShoppingCart, Zap, Box, ShieldCheck, Truck, Plus, Minus, ArrowRight, Package } from 'lucide-react';
 import { Product } from './types';
 
 interface ProductDetailModalProps {
@@ -89,7 +89,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </span>
 
                 <div className="flex items-center gap-1 bg-[#F7F7F7] border border-[#E5E5E5] px-2.5 py-1 rounded-lg text-black font-bold text-xs">
-                  <Star className="w-3.5 h-3.5 fill-black text-black" />
+                  <Package className="w-3.5 h-3.5 text-black" />
                   <span>{product.rating}</span>
                   <span className="text-[#666666]">({product.reviewsCount} reviews)</span>
                 </div>

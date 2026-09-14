@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BakeryProduct, ProductCategory } from "./types";
-import { Star, Heart, ShoppingBag, Eye, Sparkles, Check } from "lucide-react";
+import { Heart, ShoppingBag, Eye, Sparkles, Check } from "lucide-react";
 
 interface SweetCrustBestSellersProps {
   products: BakeryProduct[];
@@ -159,8 +159,8 @@ export function SweetCrustBestSellers({
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9C4A1A]">
                         {product.category}
                       </span>
-                      <div className="flex items-center gap-1 text-amber-600 text-xs font-bold">
-                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      <div className="flex items-center gap-1 text-rose-600 text-xs font-bold">
+                        <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
                         <span>{product.rating}</span>
                         <span className="text-[#8A7565] font-normal">({product.reviewsCount})</span>
                       </div>

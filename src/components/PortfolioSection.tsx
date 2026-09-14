@@ -52,10 +52,14 @@ const MEMBERS: Record<number, MemberDetails> = {
 export const PortfolioSection: React.FC = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
+  React.useEffect(() => {
+    (window as any).__ANX_ACTIVE_MEMBER_ID__ = selectedMemberId;
+  }, [selectedMemberId]);
+
   const activeMember = selectedMemberId ? MEMBERS[selectedMemberId] : null;
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 relative bg-[#080808]">
+    <section id="portfolio" className="py-16 px-4 sm:px-6 lg:px-8 relative bg-[#080808]">
       <div className="max-w-3xl mx-auto">
         {/* Section Heading */}
         <div className="text-center mb-10">
@@ -203,9 +207,20 @@ export const PortfolioSection: React.FC = () => {
 
             {/* Projects / Contributions */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#A78BFA] flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" /> Key Projects Built
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-[#A78BFA] flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" /> Key Projects Built
+                </h4>
+                <button 
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("FILTER_DEMO_SITES", { detail: { memberId: activeMember.id } }));
+                    setSelectedMemberId(null);
+                  }}
+                  className="text-xs font-bold bg-[#7C3AED]/20 hover:bg-[#7C3AED]/40 text-[#A78BFA] hover:text-white px-3 py-1.5 rounded-lg border border-[#7C3AED]/40 transition-colors"
+                >
+                  View Demos
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {activeMember.projects.map((proj, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-[#1A1A20] border border-[#2D2D38] text-xs text-slate-200 font-medium flex items-center gap-2">

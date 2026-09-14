@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   X,
-  Star,
   Check,
   ShieldCheck,
   Truck,
@@ -124,7 +123,7 @@ export function TechNovaProductModal({
                 <div className="flex items-center gap-3">
                   <div className="flex items-center text-amber-400">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
+                      <Zap key={i} className="w-4 h-4 fill-amber-400" />
                     ))}
                   </div>
                   <span className="text-sm font-bold text-white">{product.rating}</span>
@@ -312,7 +311,7 @@ export function TechNovaProductModal({
 
                     <div className="flex items-center text-amber-400 text-xs">
                       {[...Array(r.rating)].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                        <Zap key={i} className="w-3.5 h-3.5 fill-amber-400" />
                       ))}
                     </div>
 

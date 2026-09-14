@@ -1,5 +1,5 @@
 import React from "react";
-import { Star, Heart, Quote, Sparkles } from "lucide-react";
+import { Heart, Quote, Sparkles } from "lucide-react";
 import { TESTIMONIALS, Testimonial } from "@/data/beautyDemoData";
 
 export function BeautyTestimonialsSection() {
@@ -34,10 +34,10 @@ export function BeautyTestimonialsSection() {
                 {/* Quote Icon */}
                 <Quote className="w-8 h-8 text-[#e3cfbf] mb-4" />
 
-                {/* Stars Rating */}
+                {/* Rating Icons */}
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-[#8f5e3b] text-[#8f5e3b]" />
+                    <Sparkles key={i} className="w-4 h-4 text-[#8f5e3b]" />
                   ))}
                 </div>
 

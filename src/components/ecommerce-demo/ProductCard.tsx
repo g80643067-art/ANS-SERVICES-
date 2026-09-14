@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Heart, ShoppingCart, Box, Zap } from 'lucide-react';
+import { Heart, ShoppingCart, Box, Zap, Package } from 'lucide-react';
 import { Product } from './types';
 
 interface ProductCardProps {
@@ -84,7 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="text-[#666666] font-semibold uppercase tracking-wider">{product.brand}</span>
           <div className="flex items-center gap-1 bg-[#F7F7F7] border border-[#E5E5E5] px-1.5 py-0.5 rounded text-black font-bold text-[11px]">
-            <Star className="w-3 h-3 fill-black text-black" />
+            <Package className="w-3 h-3 text-black" />
             <span>{product.rating}</span>
           </div>
         </div>
