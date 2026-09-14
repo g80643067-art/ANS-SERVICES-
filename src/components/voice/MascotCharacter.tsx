@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Mic, MicOff, Volume2, Sparkles, HelpCircle, CheckCircle2, MessageCircle, Bot, X, Send } from "lucide-react";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 import { AgentOption } from "./AgentSelectorModal";
 
 export type MascotState = "idle" | "listening" | "processing" | "speaking" | "success" | "confused" | "happy" | "angry" | "hungry" | "eating" | "bored" | "exploring";
 
-export type MascotEmotion = "neutral" | "happy" | "laughing" | "annoyed" | "sad" | "crying" | "surprised" | "bored";
+export type MascotEmotion = "neutral" | "happy" | "laughing" | "annoyed" | "sad" | "crying" | "surprised" | "bored" | "thoughtful";
 
 interface MascotCharacterProps {
   state: MascotState;
   emotion?: MascotEmotion;
   transcript?: string;
-  isMuted?: boolean;
-  onToggleMic?: () => void;
   lastActionResponse?: string;
   isChatOpen?: boolean;
   onToggleChat?: () => void;
@@ -25,14 +23,13 @@ interface MascotCharacterProps {
   onQuickQuery?: (query: string) => void;
   selectedAgent?: AgentOption;
   onOpenAgentSelector?: () => void;
+  isCooldownActive?: boolean;
 }
 
 export function MascotCharacter({
   state,
   emotion = "neutral",
   transcript = "",
-  isMuted = false,
-  onToggleMic,
   lastActionResponse = "",
   isChatOpen = false,
   onToggleChat,
@@ -45,6 +42,7 @@ export function MascotCharacter({
   onQuickQuery,
   selectedAgent,
   onOpenAgentSelector,
+  isCooldownActive = false,
 }: MascotCharacterProps) {
   // Natural blinking effect
   const [isBlinking, setIsBlinking] = useState(false);
@@ -122,13 +120,17 @@ export function MascotCharacter({
     return () => clearInterval(wanderInterval);
   }, [state]);
 
+  // Effective emotion considering state
+  const effectiveEmotion: MascotEmotion =
+    emotion === "thoughtful" || state === "processing" ? "thoughtful" : emotion;
+
   // Eyes look according to state & emotion
   const getPupilOffset = () => {
-    if (emotion === "bored") return { x: 3, y: 1 };
-    if (emotion === "surprised") return { x: 0, y: -1 };
-    if (emotion === "annoyed") return { x: 0, y: 1 };
-    if (emotion === "sad" || emotion === "crying") return { x: 0, y: 2 };
-    if (state === "processing") return { x: 2, y: -3 }; // Looking up thoughtfully
+    if (effectiveEmotion === "bored") return { x: 2.8, y: 1.2 };
+    if (effectiveEmotion === "thoughtful") return { x: 3.2, y: -2.8 }; // Looking up & away thoughtfully
+    if (effectiveEmotion === "surprised") return { x: 0, y: -1.2 };
+    if (effectiveEmotion === "annoyed") return { x: 0, y: 1.2 };
+    if (effectiveEmotion === "sad" || effectiveEmotion === "crying") return { x: 0, y: 2 };
     if (state === "listening") return { x: -2, y: -1 }; // Focused attentively on user
     if (state === "speaking") return { x: 0, y: 0 };
     if (state === "angry") return { x: 0, y: 1 };
@@ -140,19 +142,22 @@ export function MascotCharacter({
 
   // Dynamic glow colors based on state & emotion
   const getAuraColor = () => {
-    if (emotion === "annoyed") {
+    if (effectiveEmotion === "annoyed") {
       return "from-rose-500/40 via-red-600/25 to-transparent";
     }
-    if (emotion === "laughing" || emotion === "happy") {
+    if (effectiveEmotion === "laughing" || effectiveEmotion === "happy") {
       return "from-amber-400/35 via-purple-500/25 to-pink-500/15";
     }
-    if (emotion === "sad" || emotion === "crying") {
+    if (effectiveEmotion === "thoughtful") {
+      return "from-teal-500/35 via-indigo-500/25 to-purple-500/15";
+    }
+    if (effectiveEmotion === "sad" || effectiveEmotion === "crying") {
       return "from-sky-500/35 via-indigo-500/20 to-transparent";
     }
-    if (emotion === "surprised") {
+    if (effectiveEmotion === "surprised") {
       return "from-violet-500/40 via-fuchsia-500/25 to-pink-500/15";
     }
-    if (emotion === "bored") {
+    if (effectiveEmotion === "bored") {
       return "from-zinc-500/30 via-purple-900/10 to-transparent";
     }
 
@@ -189,14 +194,19 @@ export function MascotCharacter({
         {onTextSubmit && (
           <form
             onSubmit={onTextSubmit}
-            className="w-full bg-slate-950/90 backdrop-blur-xl border border-purple-500/40 rounded-full px-4 py-2.5 shadow-xl flex items-center focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all"
+            className={`w-full bg-slate-950/90 backdrop-blur-xl border rounded-full px-4 py-2.5 shadow-xl flex items-center transition-all ${
+              isCooldownActive
+                ? "border-rose-500/30 opacity-75"
+                : "border-purple-500/40 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-500/20"
+            }`}
           >
             <input
               type="text"
               value={textInput || ""}
               onChange={(e) => setTextInput && setTextInput(e.target.value)}
-              placeholder={`Message ${selectedAgent?.name || "Anya"}...`}
-              className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none"
+              placeholder={isCooldownActive ? "Anya is currently quiet..." : `Message ${selectedAgent?.name || "Anya"}...`}
+              disabled={isCooldownActive}
+              className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none disabled:cursor-not-allowed"
               autoComplete="off"
             />
           </form>
@@ -232,98 +242,106 @@ export function MascotCharacter({
         />
 
         {/* State Floating Icon Badge / Speech Mood Indicator */}
-        <AnimatePresence>
-          {emotion === "laughing" && (
+        <AnimatePresence mode="wait">
+          {effectiveEmotion === "thoughtful" && state !== "speaking" && (
+            <motion.div
+              key="thoughtful-badge"
+              initial={{ opacity: 0, scale: 0.6, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: -6 }}
+              exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
+              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-indigo-500/50 text-indigo-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
+            >
+              <Sparkles className="w-3 h-3 animate-spin text-indigo-400" />
+              <span>Thinking... 🤔</span>
+            </motion.div>
+          )}
+
+          {effectiveEmotion === "laughing" && (
             <motion.div
               key="laughing-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-amber-500/50 text-amber-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Haha! 😄</span>
             </motion.div>
           )}
 
-          {emotion === "annoyed" && (
+          {effectiveEmotion === "annoyed" && (
             <motion.div
               key="annoyed-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-rose-500/60 text-rose-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Hmph! 😤</span>
             </motion.div>
           )}
 
-          {emotion === "crying" && (
+          {effectiveEmotion === "crying" && (
             <motion.div
               key="crying-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-sky-500/50 text-sky-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Udaas... 🥺</span>
             </motion.div>
           )}
 
-          {emotion === "sad" && (
+          {effectiveEmotion === "sad" && (
             <motion.div
               key="sad-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-sky-500/50 text-sky-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Aww... 🥺</span>
             </motion.div>
           )}
 
-          {emotion === "surprised" && (
+          {effectiveEmotion === "surprised" && (
             <motion.div
               key="surprised-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-violet-500/50 text-violet-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Whoa! 😲</span>
             </motion.div>
           )}
 
-          {emotion === "bored" && (
+          {effectiveEmotion === "bored" && (
             <motion.div
               key="bored-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-zinc-500/50 text-zinc-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <span>Zzz... 🥱</span>
             </motion.div>
           )}
 
-          {state === "listening" && emotion !== "annoyed" && emotion !== "crying" && emotion !== "laughing" && (
-            <motion.div
-              key="listening-badge"
-              initial={{ opacity: 0, scale: 0.6, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: -6 }}
-              exit={{ opacity: 0, scale: 0.6, y: 5 }}
-              className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-cyan-500/40 text-cyan-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
-            >
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              <span>Listening...</span>
-            </motion.div>
-          )}
-
-          {state === "processing" && (
+          {state === "processing" && effectiveEmotion !== "thoughtful" && (
             <motion.div
               key="processing-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <Sparkles className="w-3 h-3 animate-spin text-emerald-400" />
@@ -331,12 +349,13 @@ export function MascotCharacter({
             </motion.div>
           )}
 
-          {state === "success" && emotion !== "annoyed" && emotion !== "crying" && (
+          {state === "success" && effectiveEmotion !== "annoyed" && effectiveEmotion !== "crying" && (
             <motion.div
               key="success-badge"
               initial={{ opacity: 0, scale: 0.6, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: -6 }}
               exit={{ opacity: 0, scale: 0.6, y: 5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
               className="absolute -top-7 sm:-top-8 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/50 text-emerald-300 text-[11px] font-medium shadow-lg pointer-events-none whitespace-nowrap"
             >
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -347,34 +366,37 @@ export function MascotCharacter({
 
         {/* Mascot Character Interactive Wrapper */}
         <motion.div
-          onClick={onToggleMic}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.94 }}
-          className="relative pointer-events-auto cursor-pointer focus:outline-none"
-          title={isMuted ? "Tap to enable voice companion" : "Virtual Companion - Listening hands-free"}
+          className="relative pointer-events-auto cursor-default focus:outline-none"
+          title={`${selectedAgent?.name || "Anya"} - Virtual Companion`}
         >
           {/* Main Breathing & Gesture Physics Container */}
           <motion.div
             animate={{
-              y: emotion === "laughing"
+              y: effectiveEmotion === "laughing"
                 ? [0, -6, 0, -4, 0]
-                : emotion === "sad" || emotion === "crying"
+                : effectiveEmotion === "sad" || effectiveEmotion === "crying"
                 ? [0, 2, 0]
-                : emotion === "surprised"
+                : effectiveEmotion === "surprised"
                 ? [0, -6, 0]
+                : effectiveEmotion === "thoughtful"
+                ? [0, -3, 0]
+                : effectiveEmotion === "bored"
+                ? [0, 1.5, 0]
                 : state === "speaking"
                 ? [0, -3, 0, -2, 0]
                 : [0, -5, 0],
-              rotate: emotion === "annoyed"
+              rotate: effectiveEmotion === "annoyed"
                 ? -4
-                : emotion === "bored"
+                : effectiveEmotion === "bored"
                 ? 4
-                : emotion === "laughing"
+                : effectiveEmotion === "thoughtful"
+                ? 4.5
+                : effectiveEmotion === "laughing"
                 ? [0, 2, -2, 0]
-                : state === "processing"
-                ? 3
                 : state === "listening"
                 ? -2
                 : isHovered
@@ -384,10 +406,10 @@ export function MascotCharacter({
             transition={{
               y: {
                 repeat: Infinity,
-                duration: emotion === "laughing" ? 1.1 : state === "speaking" ? 1.4 : 3.2,
+                duration: effectiveEmotion === "laughing" ? 1.1 : effectiveEmotion === "bored" ? 4.2 : state === "speaking" ? 1.4 : 3.2,
                 ease: "easeInOut",
               },
-              rotate: emotion === "laughing"
+              rotate: effectiveEmotion === "laughing"
                 ? {
                     repeat: Infinity,
                     duration: 1.1,
@@ -395,8 +417,8 @@ export function MascotCharacter({
                   }
                 : {
                     type: "spring",
-                    stiffness: 120,
-                    damping: 15,
+                    stiffness: 110,
+                    damping: 16,
                   },
             }}
             className="w-20 h-28 sm:w-24 sm:h-32 relative"
@@ -575,340 +597,580 @@ export function MascotCharacter({
                   fill="url(#skinGrad)"
                 />
 
-                {/* Soft Rosy Cheeks (Blushing) */}
-                <ellipse
+                {/* Soft Rosy Cheeks (Blushing with smooth transition) */}
+                <motion.ellipse
                   cx="58"
                   cy="92"
                   rx="7"
                   ry="4"
                   fill="#FF8A9E"
-                  opacity={state === "speaking" || state === "success" ? 0.7 : 0.45}
+                  animate={{
+                    opacity: effectiveEmotion === "laughing" || effectiveEmotion === "happy" ? 0.75 : state === "speaking" || state === "success" ? 0.7 : effectiveEmotion === "annoyed" ? 0.6 : 0.45,
+                    scale: effectiveEmotion === "laughing" ? 1.15 : 1,
+                  }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
                 />
-                <ellipse
+                <motion.ellipse
                   cx="102"
                   cy="92"
                   rx="7"
                   ry="4"
                   fill="#FF8A9E"
-                  opacity={state === "speaking" || state === "success" ? 0.7 : 0.45}
+                  animate={{
+                    opacity: effectiveEmotion === "laughing" || effectiveEmotion === "happy" ? 0.75 : state === "speaking" || state === "success" ? 0.7 : effectiveEmotion === "annoyed" ? 0.6 : 0.45,
+                    scale: effectiveEmotion === "laughing" ? 1.15 : 1,
+                  }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
                 />
 
                 {/* Cute Tiny Nose */}
                 <circle cx="80" cy="88" r="1.2" fill="#E89B84" />
 
-                {/* 4. Eyes & Eyebrows */}
+                {/* 4. Eyes & Eyebrows with Smooth Cross-Fading */}
                 {/* Eyebrows */}
                 <g id="eyebrows">
-                  {emotion === "annoyed" ? (
-                    // Furrowed, slightly annoyed eyebrows
-                    <>
-                      <path d="M56 68L71 63" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
-                      <path d="M89 63L104 68" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
-                      <path d="M78 65L82 65" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-                    </>
-                  ) : emotion === "sad" || emotion === "crying" ? (
-                    // Melancholic / sympathetic eyebrows curved up towards middle
-                    <>
-                      <path d="M57 62C62 66 67 66 71 64" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                      <path d="M89 64C93 66 98 66 103 62" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                    </>
-                  ) : emotion === "surprised" ? (
-                    // High arched surprised eyebrows
-                    <>
-                      <path d="M56 61C61 56 67 56 71 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
-                      <path d="M89 61C93 56 99 56 104 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
-                    </>
-                  ) : emotion === "bored" ? (
-                    // Slightly drooped flat eyebrows
-                    <>
-                      <path d="M58 66H70" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M90 66H102" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
-                    </>
-                  ) : emotion === "happy" || emotion === "laughing" ? (
-                    // High cheerful arched eyebrows
-                    <>
-                      <path d="M57 63C62 59 67 59 71 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                      <path d="M89 63C93 59 98 59 103 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                    </>
-                  ) : state === "processing" ? (
-                    // Inquisitive curved eyebrows
-                    <>
-                      <path d="M57 65C62 61 68 63 71 66" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                      <path d="M89 66C92 63 98 61 103 65" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                    </>
-                  ) : state === "listening" ? (
-                    // Attentive alert eyebrows
-                    <>
-                      <path d="M57 64C62 62 67 63 71 65" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                      <path d="M89 65C93 63 98 62 103 64" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
-                    </>
-                  ) : (
-                    // Gentle friendly eyebrows
-                    <>
-                      <path d="M58 66C63 64 67 65 70 67" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M90 67C93 65 97 64 102 66" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
-                    </>
-                  )}
+                  <AnimatePresence mode="wait" initial={false}>
+                    {effectiveEmotion === "annoyed" ? (
+                      // Furrowed, slightly annoyed eyebrows
+                      <motion.g
+                        key="eyebrows-annoyed"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M56 68L71 63" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
+                        <path d="M89 63L104 68" stroke="#492868" strokeWidth="2.4" strokeLinecap="round" />
+                        <path d="M78 65L82 65" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+                      </motion.g>
+                    ) : effectiveEmotion === "sad" || effectiveEmotion === "crying" ? (
+                      // Melancholic / sympathetic eyebrows curved up towards middle
+                      <motion.g
+                        key="eyebrows-sad"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M57 62C62 66 67 66 71 64" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M89 64C93 66 98 66 103 62" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "surprised" ? (
+                      // High arched surprised eyebrows
+                      <motion.g
+                        key="eyebrows-surprised"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M56 61C61 56 67 56 71 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
+                        <path d="M89 61C93 56 99 56 104 61" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "bored" ? (
+                      // Slightly drooped flat eyebrows
+                      <motion.g
+                        key="eyebrows-bored"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M58 66H70" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M90 66H102" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "thoughtful" ? (
+                      // Inquisitive thoughtfully arched asymmetrical brows
+                      <motion.g
+                        key="eyebrows-thoughtful"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M56 62C61 57 68 59 72 64" stroke="#492868" strokeWidth="2.2" strokeLinecap="round" />
+                        <path d="M89 66C93 64 98 63 103 66" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "happy" || effectiveEmotion === "laughing" ? (
+                      // High cheerful arched eyebrows
+                      <motion.g
+                        key="eyebrows-happy"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M57 63C62 59 67 59 71 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M89 63C93 59 98 59 103 63" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : state === "listening" ? (
+                      // Attentive alert eyebrows
+                      <motion.g
+                        key="eyebrows-listening"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M57 64C62 62 67 63 71 65" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M89 65C93 63 98 62 103 64" stroke="#492868" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : (
+                      // Gentle friendly eyebrows
+                      <motion.g
+                        key="eyebrows-default"
+                        initial={{ opacity: 0, y: 1.5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -1.5 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                      >
+                        <path d="M58 66C63 64 67 65 70 67" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M90 67C93 65 97 64 102 66" stroke="#492868" strokeWidth="1.8" strokeLinecap="round" />
+                      </motion.g>
+                    )}
+                  </AnimatePresence>
                 </g>
 
-                {/* EYES */}
+                {/* EYES with Smooth Cross-Fading & Fluid Pupil Tracking */}
                 <g id="eyes">
-                  {emotion === "laughing" || (isBlinking && emotion !== "surprised") || state === "success" ? (
-                    // Joyful closed curved eyes (^_^)
-                    <>
-                      <path
-                        d="M56 80C60 73 68 73 72 80"
-                        stroke="#2B1446"
-                        strokeWidth="3.2"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M88 80C92 73 100 73 104 80"
-                        stroke="#2B1446"
-                        strokeWidth="3.2"
-                        strokeLinecap="round"
-                      />
-                    </>
-                  ) : emotion === "surprised" ? (
-                    // Widened Surprised Eyes
-                    <>
-                      {/* Left Eye */}
-                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
-                        <ellipse cx="64" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
-                        <ellipse cx="64" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
-                        <ellipse cx="64" cy="78" rx="4.2" ry="6" fill="#180B2B" />
-                        <circle cx="61.5" cy="73" r="3.2" fill="#FFFFFF" />
-                        <circle cx="67" cy="83" r="1.5" fill="#FFFFFF" />
-                      </g>
-                      <path d="M54 73C58 66 70 66 74 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
-
-                      {/* Right Eye */}
-                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
-                        <ellipse cx="96" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
-                        <ellipse cx="96" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
-                        <ellipse cx="96" cy="78" rx="4.2" ry="6" fill="#180B2B" />
-                        <circle cx="93.5" cy="73" r="3.2" fill="#FFFFFF" />
-                        <circle cx="99" cy="83" r="1.5" fill="#FFFFFF" />
-                      </g>
-                      <path d="M86 73C90 66 102 66 106 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
-                    </>
-                  ) : (
-                    // Open Eyes with Dynamic Emotional Expressions
-                    <>
-                      {/* Left Eye Sclera & Iris */}
-                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
-                        <ellipse cx="64" cy="78" rx="8" ry="11" fill="#FFFFFF" />
-                        <ellipse
-                          cx="64"
-                          cy="78"
-                          rx="6.5"
-                          ry="9.5"
-                          fill={
-                            emotion === "annoyed"
-                              ? "url(#annoyedEyeGrad)"
-                              : emotion === "sad" || emotion === "crying"
-                              ? "url(#wateryEyeGrad)"
-                              : `url(#${agentId}EyeGrad)`
-                          }
-                          className="transition-colors duration-500"
+                  <AnimatePresence mode="wait" initial={false}>
+                    {effectiveEmotion === "laughing" || (isBlinking && effectiveEmotion !== "surprised") || state === "success" ? (
+                      // Joyful closed curved eyes (^_^)
+                      <motion.g
+                        key="eyes-closed-happy"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.22, ease: "easeInOut" }}
+                      >
+                        <path
+                          d="M56 80C60 73 68 73 72 80"
+                          stroke="#2B1446"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
                         />
-                        <ellipse cx="64" cy="79" rx="3.5" ry="5" fill="#180B2B" />
-                        {/* Annoyed glowing ruby ring */}
-                        {emotion === "annoyed" && (
-                          <ellipse cx="64" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
-                        )}
-                        {/* Eye Highlights */}
-                        <circle cx="62" cy="74" r={emotion === "sad" || emotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
-                        <circle cx="66" cy="82" r={emotion === "sad" || emotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
-                        <circle cx="65.5" cy="75" r="0.9" fill="#E9D5FF" />
-                      </g>
-                      {/* Upper Eyelash & Lid */}
-                      <path
-                        d={emotion === "bored" ? "M55 77C58 74 70 74 73 77" : "M55 75C58 69 70 69 73 75"}
-                        stroke="#220D3A"
-                        strokeWidth={emotion === "bored" ? 3.4 : 2.8}
-                        strokeLinecap="round"
-                      />
-                      {/* Bored half-lidded shade */}
-                      {emotion === "bored" && (
-                        <path d="M56 71C60 76 68 76 72 71L72 68H56Z" fill="#FBD7C7" opacity="0.9" />
-                      )}
-                      {/* Watery glimmer for Sad / Crying */}
-                      {(emotion === "sad" || emotion === "crying") && (
-                        <ellipse cx="64" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
-                      )}
-
-                      {/* Right Eye Sclera & Iris */}
-                      <g transform={`translate(${pupilOffset.x}, ${pupilOffset.y})`}>
-                        <ellipse cx="96" cy="78" rx="8" ry="11" fill="#FFFFFF" />
-                        <ellipse
-                          cx="96"
-                          cy="78"
-                          rx="6.5"
-                          ry="9.5"
-                          fill={
-                            emotion === "annoyed"
-                              ? "url(#annoyedEyeGrad)"
-                              : emotion === "sad" || emotion === "crying"
-                              ? "url(#wateryEyeGrad)"
-                              : `url(#${agentId}EyeGrad)`
-                          }
-                          className="transition-colors duration-500"
+                        <path
+                          d="M88 80C92 73 100 73 104 80"
+                          stroke="#2B1446"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
                         />
-                        <ellipse cx="96" cy="79" rx="3.5" ry="5" fill="#180B2B" />
-                        {/* Annoyed glowing ruby ring */}
-                        {emotion === "annoyed" && (
-                          <ellipse cx="96" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
+                      </motion.g>
+                    ) : effectiveEmotion === "surprised" ? (
+                      // Widened Surprised Eyes
+                      <motion.g
+                        key="eyes-surprised"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                      >
+                        {/* Left Eye */}
+                        <motion.g
+                          animate={{ x: pupilOffset.x, y: pupilOffset.y }}
+                          transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                        >
+                          <ellipse cx="64" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
+                          <ellipse cx="64" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
+                          <ellipse cx="64" cy="78" rx="4.2" ry="6" fill="#180B2B" />
+                          <circle cx="61.5" cy="73" r="3.2" fill="#FFFFFF" />
+                          <circle cx="67" cy="83" r="1.5" fill="#FFFFFF" />
+                        </motion.g>
+                        <path d="M54 73C58 66 70 66 74 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
+
+                        {/* Right Eye */}
+                        <motion.g
+                          animate={{ x: pupilOffset.x, y: pupilOffset.y }}
+                          transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                        >
+                          <ellipse cx="96" cy="78" rx="9" ry="12.5" fill="#FFFFFF" />
+                          <ellipse cx="96" cy="78" rx="7.5" ry="11" fill={`url(#${agentId}EyeGrad)`} />
+                          <ellipse cx="96" cy="78" rx="4.2" ry="6" fill="#180B2B" />
+                          <circle cx="93.5" cy="73" r="3.2" fill="#FFFFFF" />
+                          <circle cx="99" cy="83" r="1.5" fill="#FFFFFF" />
+                        </motion.g>
+                        <path d="M86 73C90 66 102 66 106 73" stroke="#220D3A" strokeWidth="3" strokeLinecap="round" />
+                      </motion.g>
+                    ) : (
+                      // Open Eyes with Dynamic Emotional Expressions & Pupil Glide
+                      <motion.g
+                        key={`eyes-open-${effectiveEmotion}`}
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                      >
+                        {/* Left Eye Sclera & Iris */}
+                        <motion.g
+                          animate={{ x: pupilOffset.x, y: pupilOffset.y }}
+                          transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                        >
+                          <ellipse cx="64" cy="78" rx="8" ry="11" fill="#FFFFFF" />
+                          <ellipse
+                            cx="64"
+                            cy="78"
+                            rx="6.5"
+                            ry="9.5"
+                            fill={
+                              effectiveEmotion === "annoyed"
+                                ? "url(#annoyedEyeGrad)"
+                                : effectiveEmotion === "sad" || effectiveEmotion === "crying"
+                                ? "url(#wateryEyeGrad)"
+                                : `url(#${agentId}EyeGrad)`
+                            }
+                            className="transition-colors duration-500"
+                          />
+                          <ellipse cx="64" cy="79" rx="3.5" ry="5" fill="#180B2B" />
+                          {/* Annoyed glowing ruby ring */}
+                          {effectiveEmotion === "annoyed" && (
+                            <ellipse cx="64" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
+                          )}
+                          {/* Eye Highlights */}
+                          <circle cx="62" cy="74" r={effectiveEmotion === "sad" || effectiveEmotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
+                          <circle cx="66" cy="82" r={effectiveEmotion === "sad" || effectiveEmotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
+                          <circle cx="65.5" cy="75" r="0.9" fill="#E9D5FF" />
+                        </motion.g>
+                        {/* Upper Eyelash & Lid */}
+                        <path
+                          d={effectiveEmotion === "bored" ? "M55 77C58 74 70 74 73 77" : "M55 75C58 69 70 69 73 75"}
+                          stroke="#220D3A"
+                          strokeWidth={effectiveEmotion === "bored" ? 3.4 : 2.8}
+                          strokeLinecap="round"
+                        />
+                        {/* Bored half-lidded shade */}
+                        {effectiveEmotion === "bored" && (
+                          <path d="M56 71C60 76 68 76 72 71L72 68H56Z" fill="#FBD7C7" opacity="0.9" />
                         )}
-                        {/* Eye Highlights */}
-                        <circle cx="94" cy="74" r={emotion === "sad" || emotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
-                        <circle cx="98" cy="82" r={emotion === "sad" || emotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
-                        <circle cx="97.5" cy="75" r="0.9" fill="#E9D5FF" />
-                      </g>
-                      {/* Upper Eyelash & Lid */}
-                      <path
-                        d={emotion === "bored" ? "M87 77C90 74 102 74 105 77" : "M87 75C90 69 102 69 105 75"}
-                        stroke="#220D3A"
-                        strokeWidth={emotion === "bored" ? 3.4 : 2.8}
-                        strokeLinecap="round"
-                      />
-                      {/* Bored half-lidded shade */}
-                      {emotion === "bored" && (
-                        <path d="M88 71C92 76 100 76 104 71L104 68H88Z" fill="#FBD7C7" opacity="0.9" />
-                      )}
-                      {/* Watery glimmer for Sad / Crying */}
-                      {(emotion === "sad" || emotion === "crying") && (
-                        <ellipse cx="96" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
-                      )}
-                    </>
-                  )}
+                        {/* Watery glimmer for Sad / Crying */}
+                        {(effectiveEmotion === "sad" || effectiveEmotion === "crying") && (
+                          <ellipse cx="64" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
+                        )}
+
+                        {/* Right Eye Sclera & Iris */}
+                        <motion.g
+                          animate={{ x: pupilOffset.x, y: pupilOffset.y }}
+                          transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                        >
+                          <ellipse cx="96" cy="78" rx="8" ry="11" fill="#FFFFFF" />
+                          <ellipse
+                            cx="96"
+                            cy="78"
+                            rx="6.5"
+                            ry="9.5"
+                            fill={
+                              effectiveEmotion === "annoyed"
+                                ? "url(#annoyedEyeGrad)"
+                                : effectiveEmotion === "sad" || effectiveEmotion === "crying"
+                                ? "url(#wateryEyeGrad)"
+                                : `url(#${agentId}EyeGrad)`
+                            }
+                            className="transition-colors duration-500"
+                          />
+                          <ellipse cx="96" cy="79" rx="3.5" ry="5" fill="#180B2B" />
+                          {/* Annoyed glowing ruby ring */}
+                          {effectiveEmotion === "annoyed" && (
+                            <ellipse cx="96" cy="78" rx="6.5" ry="9.5" fill="none" stroke="#EF4444" strokeWidth="1.2" opacity="0.8" />
+                          )}
+                          {/* Eye Highlights */}
+                          <circle cx="94" cy="74" r={effectiveEmotion === "sad" || effectiveEmotion === "crying" ? 3.2 : 2.6} fill="#FFFFFF" />
+                          <circle cx="98" cy="82" r={effectiveEmotion === "sad" || effectiveEmotion === "crying" ? 2 : 1.3} fill="#FFFFFF" />
+                          <circle cx="97.5" cy="75" r="0.9" fill="#E9D5FF" />
+                        </motion.g>
+                        {/* Upper Eyelash & Lid */}
+                        <path
+                          d={effectiveEmotion === "bored" ? "M87 77C90 74 102 74 105 77" : "M87 75C90 69 102 69 105 75"}
+                          stroke="#220D3A"
+                          strokeWidth={effectiveEmotion === "bored" ? 3.4 : 2.8}
+                          strokeLinecap="round"
+                        />
+                        {/* Bored half-lidded shade */}
+                        {effectiveEmotion === "bored" && (
+                          <path d="M88 71C92 76 100 76 104 71L104 68H88Z" fill="#FBD7C7" opacity="0.9" />
+                        )}
+                        {/* Watery glimmer for Sad / Crying */}
+                        {(effectiveEmotion === "sad" || effectiveEmotion === "crying") && (
+                          <ellipse cx="96" cy="85" rx="5" ry="1.6" fill="#E0F2FE" opacity="0.8" />
+                        )}
+                      </motion.g>
+                    )}
+                  </AnimatePresence>
                 </g>
 
                 {/* Subtle Tiny Animated Tear Droplets when Crying */}
-                {emotion === "crying" && (
-                  <g id="tears">
-                    <motion.ellipse
-                      cx="59"
-                      cy="86"
-                      rx="1.4"
-                      ry="2.2"
-                      fill="#38BDF8"
-                      animate={{
-                        cy: [86, 95, 106],
-                        opacity: [0, 0.85, 0],
-                        scaleY: [0.8, 1.2, 0.4],
-                      }}
-                      transition={{
-                        duration: 1.3,
-                        repeat: Infinity,
-                        ease: "easeIn",
-                      }}
-                    />
-                    <motion.ellipse
-                      cx="101"
-                      cy="86"
-                      rx="1.4"
-                      ry="2.2"
-                      fill="#38BDF8"
-                      animate={{
-                        cy: [86, 96, 107],
-                        opacity: [0, 0.85, 0],
-                        scaleY: [0.8, 1.2, 0.4],
-                      }}
-                      transition={{
-                        duration: 1.4,
-                        repeat: Infinity,
-                        ease: "easeIn",
-                        delay: 0.35,
-                      }}
-                    />
-                  </g>
-                )}
-
-                {/* 5. Mouth (Expressive & Speaking Animated) */}
-                <g id="mouth">
-                  {state === "speaking" ? (
-                    // Speaking Mouth Sync Animation Frames
-                    emotion === "laughing" ? (
-                      // Speaking while laughing (wider open with visible teeth)
-                      mouthFrame === 0 ? (
-                        <g id="laugh-mouth-0">
-                          <path d="M72 97C74 104 86 104 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
-                          <path d="M73 97C75 99.5 85 99.5 87 97H73Z" fill="#FFFFFF" />
-                          <ellipse cx="80" cy="103" rx="3.5" ry="1.5" fill="#F43F5E" />
-                        </g>
-                      ) : mouthFrame === 1 ? (
-                        <g id="laugh-mouth-1">
-                          <ellipse cx="80" cy="100" rx="5" ry="4" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
-                          <path d="M75 97C77 99 83 99 85 97H75Z" fill="#FFFFFF" />
-                          <ellipse cx="80" cy="102" rx="3" ry="1.8" fill="#F43F5E" />
-                        </g>
-                      ) : mouthFrame === 2 ? (
-                        <g id="laugh-mouth-2">
-                          <path d="M73 97C75 106 85 106 87 97H73Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
-                          <path d="M74 97C76 100 84 100 86 97H74Z" fill="#FFFFFF" />
-                        </g>
-                      ) : (
-                        <path d="M72 98C75 103 85 103 88 98" stroke="#822727" strokeWidth="2.4" strokeLinecap="round" />
-                      )
-                    ) : mouthFrame === 0 ? (
-                      <path
-                        d="M74 98C77 102 83 102 86 98"
-                        stroke="#822727"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
+                <AnimatePresence>
+                  {effectiveEmotion === "crying" && (
+                    <motion.g
+                      id="tears"
+                      key="crying-tears"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <motion.ellipse
+                        cx="59"
+                        cy="86"
+                        rx="1.4"
+                        ry="2.2"
+                        fill="#38BDF8"
+                        animate={{
+                          cy: [86, 95, 106],
+                          opacity: [0, 0.85, 0],
+                          scaleY: [0.8, 1.2, 0.4],
+                        }}
+                        transition={{
+                          duration: 1.3,
+                          repeat: Infinity,
+                          ease: "easeIn",
+                        }}
                       />
-                    ) : mouthFrame === 1 ? (
-                      <ellipse cx="80" cy="100" rx="4" ry="3.5" fill="#C53030" stroke="#741A1A" strokeWidth="0.8" />
-                    ) : mouthFrame === 2 ? (
-                      <path d="M75 99C77 106 83 106 85 99H75Z" fill="#C53030" stroke="#741A1A" strokeWidth="1" />
-                    ) : (
-                      <ellipse cx="80" cy="99" rx="3" ry="2" fill="#E53E3E" opacity="0.9" />
-                    )
-                  ) : emotion === "laughing" ? (
-                    // VERY HAPPY / LAUGHING: Bigger smile, teeth visible!
-                    <g id="laughing-smile">
-                      <path d="M72 97C72 97 74.5 105 80 105C85.5 105 88 97 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
-                      {/* Pearly white upper teeth */}
-                      <path d="M73.5 97C75.5 99.8 84.5 99.8 86.5 97H73.5Z" fill="#FFFFFF" />
-                      {/* Cute tongue */}
-                      <ellipse cx="80" cy="103" rx="3.5" ry="1.8" fill="#F43F5E" />
-                    </g>
-                  ) : emotion === "happy" ? (
-                    // Natural happy smile
-                    <path
-                      d="M73 98C76 103 84 103 87 98"
-                      stroke="#822727"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    />
-                  ) : emotion === "annoyed" ? (
-                    // Annoyed slightly furrowed/pouting mouth
-                    <path d="M74 101C77 98 83 98 86 101" stroke="#741A1A" strokeWidth="2.2" strokeLinecap="round" />
-                  ) : emotion === "sad" || emotion === "crying" ? (
-                    // Reduced smile, drooped sad mouth
-                    <path d="M74 102C77 99 83 99 86 102" stroke="#741A1A" strokeWidth="2" strokeLinecap="round" />
-                  ) : emotion === "surprised" ? (
-                    // Cute open 'o' surprise gasp
-                    <ellipse cx="80" cy="100" rx="3.2" ry="4.2" fill="#881337" stroke="#4C0519" strokeWidth="0.8" />
-                  ) : emotion === "bored" ? (
-                    // Indifferent straight line mouth
-                    <path d="M75 100H85" stroke="#741A1A" strokeWidth="1.8" strokeLinecap="round" />
-                  ) : state === "listening" ? (
-                    // Attentive slightly parted 'o' mouth
-                    <ellipse cx="80" cy="99" rx="3" ry="2.2" fill="#E53E3E" opacity="0.8" />
-                  ) : state === "confused" ? (
-                    // Slightly wavy / quizzical mouth
-                    <path d="M75 100C77 98 81 102 85 99" stroke="#741A1A" strokeWidth="2" strokeLinecap="round" />
-                  ) : (
-                    // Cute gentle resting smile
-                    <path
-                      d="M74 98C77 102 83 102 86 98"
-                      stroke="#822727"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    />
+                      <motion.ellipse
+                        cx="101"
+                        cy="86"
+                        rx="1.4"
+                        ry="2.2"
+                        fill="#38BDF8"
+                        animate={{
+                          cy: [86, 96, 107],
+                          opacity: [0, 0.85, 0],
+                          scaleY: [0.8, 1.2, 0.4],
+                        }}
+                        transition={{
+                          duration: 1.4,
+                          repeat: Infinity,
+                          ease: "easeIn",
+                          delay: 0.35,
+                        }}
+                      />
+                    </motion.g>
                   )}
+                </AnimatePresence>
+
+                {/* 5. Mouth (Expressive & Speaking with Smooth Cross-Fading) */}
+                <g id="mouth">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {state === "speaking" ? (
+                      // Speaking Mouth Sync Animation Frames
+                      effectiveEmotion === "laughing" ? (
+                        // Speaking while laughing (wider open with visible teeth)
+                        mouthFrame === 0 ? (
+                          <motion.g
+                            key="laugh-mouth-0"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.92 }}
+                            transition={{ duration: 0.12 }}
+                          >
+                            <path d="M72 97C74 104 86 104 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                            <path d="M73 97C75 99.5 85 99.5 87 97H73Z" fill="#FFFFFF" />
+                            <ellipse cx="80" cy="103" rx="3.5" ry="1.5" fill="#F43F5E" />
+                          </motion.g>
+                        ) : mouthFrame === 1 ? (
+                          <motion.g
+                            key="laugh-mouth-1"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.92 }}
+                            transition={{ duration: 0.12 }}
+                          >
+                            <ellipse cx="80" cy="100" rx="5" ry="4" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                            <path d="M75 97C77 99 83 99 85 97H75Z" fill="#FFFFFF" />
+                            <ellipse cx="80" cy="102" rx="3" ry="1.8" fill="#F43F5E" />
+                          </motion.g>
+                        ) : mouthFrame === 2 ? (
+                          <motion.g
+                            key="laugh-mouth-2"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.92 }}
+                            transition={{ duration: 0.12 }}
+                          >
+                            <path d="M73 97C75 106 85 106 87 97H73Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                            <path d="M74 97C76 100 84 100 86 97H74Z" fill="#FFFFFF" />
+                          </motion.g>
+                        ) : (
+                          <motion.g
+                            key="laugh-mouth-3"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.92 }}
+                            transition={{ duration: 0.12 }}
+                          >
+                            <path d="M72 98C75 103 85 103 88 98" stroke="#822727" strokeWidth="2.4" strokeLinecap="round" />
+                          </motion.g>
+                        )
+                      ) : mouthFrame === 0 ? (
+                        <motion.g
+                          key="speak-mouth-0"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          <path
+                            d="M74 98C77 102 83 102 86 98"
+                            stroke="#822727"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                          />
+                        </motion.g>
+                      ) : mouthFrame === 1 ? (
+                        <motion.g
+                          key="speak-mouth-1"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          <ellipse cx="80" cy="100" rx="4" ry="3.5" fill="#C53030" stroke="#741A1A" strokeWidth="0.8" />
+                        </motion.g>
+                      ) : mouthFrame === 2 ? (
+                        <motion.g
+                          key="speak-mouth-2"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          <path d="M75 99C77 106 83 106 85 99H75Z" fill="#C53030" stroke="#741A1A" strokeWidth="1" />
+                        </motion.g>
+                      ) : (
+                        <motion.g
+                          key="speak-mouth-3"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          <ellipse cx="80" cy="99" rx="3" ry="2" fill="#E53E3E" opacity="0.9" />
+                        </motion.g>
+                      )
+                    ) : effectiveEmotion === "laughing" ? (
+                      // VERY HAPPY / LAUGHING: Bigger smile, teeth visible!
+                      <motion.g
+                        key="mouth-laughing"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M72 97C72 97 74.5 105 80 105C85.5 105 88 97 88 97H72Z" fill="#991B1B" stroke="#741A1A" strokeWidth="0.8" />
+                        {/* Pearly white upper teeth */}
+                        <path d="M73.5 97C75.5 99.8 84.5 99.8 86.5 97H73.5Z" fill="#FFFFFF" />
+                        {/* Cute tongue */}
+                        <ellipse cx="80" cy="103" rx="3.5" ry="1.8" fill="#F43F5E" />
+                      </motion.g>
+                    ) : effectiveEmotion === "happy" ? (
+                      // Natural happy smile
+                      <motion.g
+                        key="mouth-happy"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path
+                          d="M73 98C76 103 84 103 87 98"
+                          stroke="#822727"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                        />
+                      </motion.g>
+                    ) : effectiveEmotion === "thoughtful" ? (
+                      // Soft thoughtful pursed contemplation mouth
+                      <motion.g
+                        key="mouth-thoughtful"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M75 99C78 97.5 82 101.5 85 99.5" stroke="#741A1A" strokeWidth="2.2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "annoyed" ? (
+                      // Annoyed slightly furrowed/pouting mouth
+                      <motion.g
+                        key="mouth-annoyed"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M74 101C77 98 83 98 86 101" stroke="#741A1A" strokeWidth="2.2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "sad" || effectiveEmotion === "crying" ? (
+                      // Reduced smile, drooped sad mouth
+                      <motion.g
+                        key="mouth-sad"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M74 102C77 99 83 99 86 102" stroke="#741A1A" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : effectiveEmotion === "surprised" ? (
+                      // Cute open 'o' surprise gasp
+                      <motion.g
+                        key="mouth-surprised"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <ellipse cx="80" cy="100" rx="3.2" ry="4.2" fill="#881337" stroke="#4C0519" strokeWidth="0.8" />
+                      </motion.g>
+                    ) : effectiveEmotion === "bored" ? (
+                      // Indifferent straight line mouth
+                      <motion.g
+                        key="mouth-bored"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M75 100H85" stroke="#741A1A" strokeWidth="1.8" strokeLinecap="round" />
+                      </motion.g>
+                    ) : state === "listening" ? (
+                      // Attentive slightly parted 'o' mouth
+                      <motion.g
+                        key="mouth-listening"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <ellipse cx="80" cy="99" rx="3" ry="2.2" fill="#E53E3E" opacity="0.8" />
+                      </motion.g>
+                    ) : state === "confused" ? (
+                      // Slightly wavy / quizzical mouth
+                      <motion.g
+                        key="mouth-confused"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path d="M75 100C77 98 81 102 85 99" stroke="#741A1A" strokeWidth="2" strokeLinecap="round" />
+                      </motion.g>
+                    ) : (
+                      // Cute gentle resting smile
+                      <motion.g
+                        key="mouth-default"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.24, ease: "easeInOut" }}
+                      >
+                        <path
+                          d="M74 98C77 102 83 102 86 98"
+                          stroke="#822727"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                        />
+                      </motion.g>
+                    )}
+                  </AnimatePresence>
                 </g>
 
                 {/* 6. Front Hair Bangs */}
@@ -979,11 +1241,7 @@ export function MascotCharacter({
             <div className="absolute -bottom-1 right-1 flex items-center justify-center">
               <span
                 className={`w-3 h-3 rounded-full border-2 border-[#0D091A] shadow-md ${
-                  isMuted
-                    ? "bg-zinc-500"
-                    : state === "listening"
-                    ? "bg-cyan-400 animate-pulse"
-                    : state === "speaking"
+                  state === "speaking"
                     ? "bg-purple-400 animate-ping"
                     : state === "processing"
                     ? "bg-emerald-400 animate-spin"

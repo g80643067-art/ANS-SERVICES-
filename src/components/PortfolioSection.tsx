@@ -19,9 +19,9 @@ const MEMBERS: Record<number, MemberDetails> = {
     id: 1,
     name: "Aditya",
     label: "MEMBER 1",
-    role: "Web Developer / Creative Developer",
+    role: "Founder, Owner & Tech Developer",
     contact: "+917348382816",
-    bio: "Passionate creative developer crafting high-performance web experiences, interactive 3D simulations, and immersive digital interfaces at ANX Agency.",
+    bio: "Passionate founder, owner and creative tech developer crafting high-performance web experiences, interactive 3D simulations, and immersive digital interfaces at ANX Agency.",
     skills: ["React 18+", "TypeScript", "Tailwind CSS", "Canvas & WebGL", "UI/UX Architecture", "Motion & Animation"],
     anxWork: "Spearheading frontend architecture, interactive topology canvas engines, and high-conversion modern web applications with ultra-responsive layouts.",
     projects: [
@@ -35,9 +35,9 @@ const MEMBERS: Record<number, MemberDetails> = {
     id: 2,
     name: "Nikhil",
     label: "MEMBER 2",
-    role: "Web Developer / Creative Developer",
+    role: "Founder, Owner & Tech Developer",
     contact: "+91 9219694862",
-    bio: "Full-stack engineer specializing in scalable system architecture, seamless API integrations, robust state management, and lightning-fast web deployments.",
+    bio: "Full-stack engineer, founder and tech developer specializing in scalable system architecture, seamless API integrations, robust state management, and lightning-fast web deployments.",
     skills: ["Next.js / Vite", "Node.js & Express", "TypeScript", "State Management", "Database Design", "Performance Optimization"],
     anxWork: "Designing secure backend services, state synchronization engines, client-side routing, and cross-platform responsive business solutions.",
     projects: [
