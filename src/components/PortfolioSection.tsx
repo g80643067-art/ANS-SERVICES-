@@ -56,6 +56,20 @@ export const PortfolioSection: React.FC = () => {
     (window as any).__ANX_ACTIVE_MEMBER_ID__ = selectedMemberId;
   }, [selectedMemberId]);
 
+  React.useEffect(() => {
+    const handleOpen = (e: any) => {
+      if (e.detail?.memberId) setSelectedMemberId(e.detail.memberId);
+    };
+    const handleClose = () => setSelectedMemberId(null);
+
+    window.addEventListener("OPEN_MEMBER_MODAL", handleOpen);
+    window.addEventListener("CLOSE_MEMBER_MODAL", handleClose);
+    return () => {
+      window.removeEventListener("OPEN_MEMBER_MODAL", handleOpen);
+      window.removeEventListener("CLOSE_MEMBER_MODAL", handleClose);
+    };
+  }, []);
+
   const activeMember = selectedMemberId ? MEMBERS[selectedMemberId] : null;
 
   return (

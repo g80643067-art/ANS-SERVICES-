@@ -49,6 +49,10 @@ export default function App() {
   const [selectedService, setSelectedService] = useState<string | undefined>();
 
   useEffect(() => {
+    (window as any).__ANX_CURRENT_VIEW__ = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
     // Listen for hash changes or popstate
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
@@ -140,31 +144,47 @@ export default function App() {
         if (window.history.pushState) window.history.pushState(null, "", window.location.pathname);
       }
       setTimeout(() => {
-        if (id === "top") window.scrollTo({ top: 0, behavior: "smooth" });
-        else document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+        if (id === "top" || id === "home") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          const target = document.getElementById(id) || (id === "demo-sites" ? document.getElementById("demo-sites-list") : null);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth" });
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }
+      }, 80);
     };
 
     switch(action) {
       case "SHOW_PIZZA_DEMO":
+      case "SHOW_FOOD_DEMO":
         openDemo("food");
         break;
       case "SHOW_SALON_DEMO":
+      case "SHOW_BEAUTY_DEMO":
         openDemo("beauty");
         break;
       case "SHOW_BUSINESS_DEMO":
-        openDemo("ecommerce"); // Mapped to ecommerce for now
+      case "SHOW_ECOMMERCE_DEMO":
+        openDemo("ecommerce");
         break;
       case "SHOW_TUITION_DEMO":
-        openDemo("clothes"); // Example map
+      case "SHOW_CLOTHES_DEMO":
+      case "SHOW_FASHION_DEMO":
+        openDemo("clothes");
         break;
       case "SHOW_ELECTRONICS_DEMO":
+      case "SHOW_TECH_DEMO":
         openDemo("electronics");
         break;
       case "SHOW_BAKERY_DEMO":
+      case "SHOW_CAKE_DEMO":
         openDemo("bakery");
         break;
       case "OPEN_HOME":
+      case "GO_HOME":
         navSection("top");
         break;
       case "OPEN_ABOUT":
@@ -177,6 +197,7 @@ export default function App() {
         navSection("portfolio");
         break;
       case "OPEN_DEMO_SITES":
+      case "SHOW_ALL_DEMOS":
         navSection("demo-sites");
         break;
       case "SHOW_MEMBER_DEMOS":
@@ -186,18 +207,21 @@ export default function App() {
           navSection("demo-sites");
         }
         break;
+      case "OPEN_MEMBER_MODAL":
+        window.dispatchEvent(new CustomEvent("OPEN_MEMBER_MODAL", { detail: { memberId: parseInt(payload) || 1 } }));
+        break;
       case "OPEN_CONTACT":
         navSection("contact");
-        break;
-      case "NEXT_SECTION":
-        // simple scroll to next relevant section logic
-        window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
         break;
       case "SCROLL_TOP":
         window.scrollTo({ top: 0, behavior: "smooth" });
         break;
       case "SCROLL_DOWN":
-        window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+      case "NEXT_SECTION":
+        window.scrollBy({ top: window.innerHeight * 0.75, behavior: "smooth" });
+        break;
+      case "SCROLL_UP":
+        window.scrollBy({ top: -window.innerHeight * 0.75, behavior: "smooth" });
         break;
       case "OPEN_MENU":
         window.dispatchEvent(new CustomEvent("ANX_MENU_TOGGLE", { detail: { action: 'OPEN' } }));
@@ -206,9 +230,18 @@ export default function App() {
         window.dispatchEvent(new CustomEvent("ANX_MENU_TOGGLE", { detail: { action: 'CLOSE' } }));
         break;
       case "OPEN_WHATSAPP":
-        window.open("https://wa.me/919219694862?text=Hello%20ANX,%20I%20want%20to%20get%20a%20website", "_blank");
+        window.open("https://wa.me/917348382816?text=Hello%20ANX,%20I%20want%20to%20get%20a%20website", "_blank");
+        break;
+      case "OPEN_CALL":
+        window.location.href = "tel:+917348382816";
+        break;
+      case "OPEN_AGENT_SELECTOR":
+        window.dispatchEvent(new CustomEvent("ANX_OPEN_AGENT_SELECTOR"));
         break;
       case "RETURN_TO_ANX":
+      case "GO_BACK":
+        setDemoOpen(false);
+        window.dispatchEvent(new CustomEvent("CLOSE_MEMBER_MODAL"));
         handleBackToAgency();
         break;
       default:

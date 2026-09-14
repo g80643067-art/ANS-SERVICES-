@@ -473,46 +473,129 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
     }
   };
 
+  const ACKNOWLEDGMENTS = [
+    "OK boss!",
+    "Sure boss!",
+    "Done boss!",
+    "On it boss!",
+    "Got it boss!",
+    "Yes boss!"
+  ];
+
+  const getRandomAck = () => ACKNOWLEDGMENTS[Math.floor(Math.random() * ACKNOWLEDGMENTS.length)];
+
   // Safe client-side fallback if server API is slow or unreachable
   const getClientIntentFallback = (queryText: string) => {
-    const lower = queryText.toLowerCase();
-    if (lower.includes("beauty") || lower.includes("makeup") || lower.includes("salon") || lower.includes("parlour") || lower.includes("bridal") || lower.includes("spa")) {
-      return { action: "SHOW_SALON_DEMO", payload: "", response: "Yeh lijiye, hamara luxury salon aur beauty parlour website ka demo." };
+    const lower = queryText.toLowerCase().trim();
+
+    // 1. NORMAL CONVERSATION & CASUAL QUESTIONS (REPLY_ONLY)
+    if (lower.includes("kaise ho") || lower.includes("how are you") || lower.includes("kya haal")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Main bilkul ready hoon boss!" };
     }
-    if (lower.includes("cloth") || lower.includes("fashion") || lower.includes("dress") || lower.includes("boutique") || lower.includes("saree") || lower.includes("jeans")) {
-      return { action: "SHOW_TUITION_DEMO", payload: "", response: "Zaroor, yeh raha hamara modern fashion aur clothing boutique ka demo." };
+    if (lower.includes("kya kar sakti") || lower.includes("kya kar sakte") || lower.includes("what can you do") || lower.includes("kya kaam hai")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live assistant hoon boss! Main aapko website demos dikha sakti hoon, portfolio explore karwa sakti hoon, aur poori site navigate kar sakti hoon." };
     }
-    if (lower.includes("bakery") || lower.includes("cake") || lower.includes("pastry") || lower.includes("sweet")) {
-      return { action: "SHOW_BAKERY_DEMO", payload: "", response: "Bilkul! Bakery aur cake store ka live demo aapke saamne hai." };
+    if (lower.includes("aaj kya kar rahe") || lower.includes("kya kar rahe ho") || lower.includes("what are you doing") || lower.includes("kya chal raha")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Bas boss, aapke liye website guide karne aur live demos dikhane ke liye ready hoon!" };
     }
-    if (lower.includes("food") || lower.includes("pizza") || lower.includes("restaurant") || lower.includes("cafe") || lower.includes("khana") || lower.includes("burger")) {
-      return { action: "SHOW_PIZZA_DEMO", payload: "", response: "Bilkul, main aapko hamari restaurant aur food ordering website ka live demo dikhata hoon." };
+    if (lower.includes("kaun ho tum") || lower.includes("who are you") || lower.includes("apna naam") || lower.includes("tumhara naam")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live AI interactive assistant hoon boss!" };
     }
-    if (lower.includes("ecommerce") || lower.includes("shop") || lower.includes("mart") || lower.includes("store") || lower.includes("product")) {
-      return { action: "SHOW_BUSINESS_DEMO", payload: "", response: "Main aapko hamare modern e-commerce platform ka demo dikhata hoon." };
+    if (lower.includes("anx kya hai") || lower.includes("agency kya") || lower.includes("anx ke bare me")) {
+      return { action: "REPLY_ONLY", payload: "", response: "ANX Agency high-performance modern websites, web applications aur custom e-commerce platforms banati hai boss!" };
     }
-    if (lower.includes("electronic") || lower.includes("mobile") || lower.includes("gadget") || lower.includes("laptop") || lower.includes("tv")) {
-      return { action: "SHOW_ELECTRONICS_DEMO", payload: "", response: "Electronics store ka demo open kar raha hoon." };
+    if (lower.includes("shabash") || lower.includes("good job") || lower.includes("great") || lower.includes("mast") || lower.includes("badiya") || lower.includes("badhiya")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Shukriya boss! Hamesha aapki service mein hazir hoon." };
     }
-    if (lower.includes("price") || lower.includes("pricing") || lower.includes("cost") || lower.includes("budget") || lower.includes("kharcha") || lower.includes("rate")) {
-      return { action: "OPEN_WHATSAPP", payload: "", response: "Humare website packages bohot budget-friendly hain! WhatsApp par connect ho kar quotation le sakte hain." };
+    if (lower.startsWith("hello") || lower.startsWith("hi") || lower.startsWith("hey") || lower.startsWith("namaste") || lower.startsWith("namaskar")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Namaste boss! Kahiye, aaj kaun sa website demo explore karein?" };
     }
-    if (lower.includes("contact") || lower.includes("whatsapp") || lower.includes("call") || lower.includes("baat") || lower.includes("phone")) {
-      return { action: "OPEN_CONTACT", payload: "", response: "Aap niche diye gaye contact form ya direct WhatsApp ke zariye humse connect kar sakte hain." };
+
+    // 2. CONTEXT-AWARE COMMANDS ("iska demo kholo", "ye wala kholo", "ye project dikhao")
+    if (lower.includes("iska demo") || lower.includes("ye wala") || lower.includes("ye demo") || lower.includes("iska project") || lower.includes("pehla wala") || lower.includes("open this")) {
+      const activeMemberId = (window as any).__ANX_ACTIVE_MEMBER_ID__;
+      const activeCarouselItem = (window as any).__ANX_ACTIVE_CAROUSEL_ITEM__;
+      if (activeMemberId === 1) {
+        return { action: "SHOW_BUSINESS_DEMO", payload: "1", response: getRandomAck() };
+      }
+      if (activeMemberId === 2) {
+        return { action: "SHOW_ELECTRONICS_DEMO", payload: "2", response: getRandomAck() };
+      }
+      if (activeCarouselItem) {
+        if (activeCarouselItem.isBeautyDemo) return { action: "SHOW_SALON_DEMO", payload: "", response: getRandomAck() };
+        if (activeCarouselItem.isClothesDemo) return { action: "SHOW_TUITION_DEMO", payload: "", response: getRandomAck() };
+        if (activeCarouselItem.isElectronicsDemo) return { action: "SHOW_ELECTRONICS_DEMO", payload: "", response: getRandomAck() };
+        if (activeCarouselItem.isBakeryDemo) return { action: "SHOW_BAKERY_DEMO", payload: "", response: getRandomAck() };
+        if (activeCarouselItem.isEcommerceDemo) return { action: "SHOW_BUSINESS_DEMO", payload: "", response: getRandomAck() };
+        if (activeCarouselItem.isLiveDemo) return { action: "SHOW_PIZZA_DEMO", payload: "", response: getRandomAck() };
+      }
+      return { action: "OPEN_DEMO_SITES", payload: "", response: getRandomAck() };
     }
-    if (lower.includes("service") || lower.includes("kaam") || lower.includes("kya banate")) {
-      return { action: "OPEN_SERVICES", payload: "", response: "Hum custom websites, web applications, e-commerce aur high-speed landing pages banate hain." };
+
+    // 3. SPECIFIC DEMO COMMANDS
+    if (lower.includes("beauty") || lower.includes("makeup") || lower.includes("salon") || lower.includes("parlour") || lower.includes("spa") || lower.includes("bridal") || lower.includes("shadi")) {
+      return { action: "SHOW_SALON_DEMO", payload: "", response: getRandomAck() };
     }
-    if (lower.includes("portfolio") || lower.includes("projects") || lower.includes("past work")) {
-      return { action: "OPEN_PORTFOLIO", payload: "", response: "Yeh rahe hamare portfolio aur members ke projects." };
+    if (lower.includes("cloth") || lower.includes("fashion") || lower.includes("dress") || lower.includes("boutique") || lower.includes("saree") || lower.includes("jeans") || lower.includes("kapd")) {
+      return { action: "SHOW_TUITION_DEMO", payload: "", response: getRandomAck() };
     }
-    if (lower.includes("about") || lower.includes("agency") || lower.includes("bare me")) {
-      return { action: "OPEN_ABOUT", payload: "", response: "ANX Agency ek modern digital product aur high-converting website agency hai." };
+    if (lower.includes("bakery") || lower.includes("cake") || lower.includes("pastry") || lower.includes("sweetcrust") || lower.includes("biscuit")) {
+      return { action: "SHOW_BAKERY_DEMO", payload: "", response: getRandomAck() };
     }
-    if (lower.includes("home") || lower.includes("top") || lower.includes("back") || lower.includes("wapas")) {
-      return { action: "RETURN_TO_ANX", payload: "", response: "Theek hai, main aapko wapas ANX home screen par le chalti hoon." };
+    if (lower.includes("pizza") || lower.includes("food") || lower.includes("restaurant") || lower.includes("khana") || lower.includes("cafe") || lower.includes("burger")) {
+      return { action: "SHOW_PIZZA_DEMO", payload: "", response: getRandomAck() };
     }
-    return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency AI assistant hoon. Aap mujhse salon, food, bakery, clothes ya electronics demo dekhne keh sakte hain!" };
+    if (lower.includes("ecommerce") || lower.includes("mart") || lower.includes("online store") || lower.includes("shopping") || lower.includes("shop") || lower.includes("anx mart")) {
+      return { action: "SHOW_BUSINESS_DEMO", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("electronic") || lower.includes("mobile") || lower.includes("laptop") || lower.includes("gadget") || lower.includes("technova") || lower.includes("tv")) {
+      return { action: "SHOW_ELECTRONICS_DEMO", payload: "", response: getRandomAck() };
+    }
+
+    // 4. WEBSITE NAVIGATION & SCROLLING COMMANDS
+    if (lower.includes("home kholo") || lower.includes("home par") || lower.includes("home dikhao") || lower.includes("top par") || lower.includes("main page") || lower === "home") {
+      return { action: "OPEN_HOME", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("about dikhao") || lower.includes("about kholo") || lower.includes("about par") || lower.includes("about section") || lower === "about") {
+      return { action: "OPEN_ABOUT", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("portfolio kholo") || lower.includes("portfolio dikhao") || lower.includes("portfolio par") || lower.includes("projects dikhao") || lower.includes("team dikhao") || lower.includes("members dikhao") || lower === "portfolio") {
+      return { action: "OPEN_PORTFOLIO", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("contact par") || lower.includes("contact kholo") || lower.includes("contact dikhao") || lower.includes("sampark") || lower === "contact") {
+      return { action: "OPEN_CONTACT", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("demo sites dikhao") || lower.includes("demo sites kholo") || lower.includes("saare demos") || lower.includes("all demos") || lower.includes("demo sites") || lower.includes("demos dikhao") || lower === "demo") {
+      return { action: "OPEN_DEMO_SITES", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("services dikhao") || lower.includes("services kholo") || lower.includes("services section") || lower === "services") {
+      return { action: "OPEN_SERVICES", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("neeche scroll") || lower.includes("niche scroll") || lower.includes("scroll down") || lower.includes("niche jao") || lower.includes("neeche karo") || lower.includes("thoda niche")) {
+      return { action: "SCROLL_DOWN", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("upar scroll") || lower.includes("scroll up") || lower.includes("upar jao") || lower.includes("upar karo") || lower.includes("thoda upar")) {
+      return { action: "SCROLL_UP", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("wapas jao") || lower.includes("back jao") || lower.includes("go back") || lower.includes("back to agency") || lower.includes("peeche jao") || lower.includes("exit demo") || lower.includes("close demo")) {
+      return { action: "RETURN_TO_ANX", payload: "", response: getRandomAck() };
+    }
+
+    // 5. CONTACT / WHATSAPP / CALL COMMANDS
+    if (lower.includes("whatsapp") || lower.includes("chat")) {
+      return { action: "OPEN_WHATSAPP", payload: "", response: getRandomAck() };
+    }
+    if (lower.includes("call karo") || lower.includes("phone milao") || lower.includes("call now")) {
+      return { action: "OPEN_CALL", payload: "", response: getRandomAck() };
+    }
+
+    // 6. PRICING INQUIRIES (Conversational)
+    if (lower.includes("price") || lower.includes("pricing") || lower.includes("cost") || lower.includes("kharcha") || lower.includes("budget") || lower.includes("rate") || lower.includes("charges")) {
+      return { action: "REPLY_ONLY", payload: "", response: "Humare website packages bohot budget-friendly hain boss! Special quotation ke liye WhatsApp par connect kar sakte hain." };
+    }
+
+    // Default friendly response
+    return { action: "REPLY_ONLY", payload: "", response: "Main ANX Agency ka live assistant hoon boss! Aap mujhse Home, About, Portfolio, Demo Sites kholne ya koi bhi sawal pooch sakte hain." };
   };
 
   const processIntent = async (text: string) => {
@@ -534,13 +617,33 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
     abortControllerRef.current = new AbortController();
 
     try {
+      const detectVisibleSection = () => {
+        if ((window as any).__ANX_CURRENT_VIEW__ && (window as any).__ANX_CURRENT_VIEW__ !== "agency") {
+          return (window as any).__ANX_CURRENT_VIEW__;
+        }
+        const sections = ["contact", "portfolio", "about", "services", "demo-sites-list", "demo-sites", "home"];
+        for (const id of sections) {
+          const el = document.getElementById(id);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.6 && rect.bottom >= window.innerHeight * 0.2) {
+              return id;
+            }
+          }
+        }
+        return window.scrollY < 300 ? "home" : "body";
+      };
+
       const context = {
         url: window.location.href,
         pathname: window.location.pathname,
         search: window.location.search,
         hash: window.location.hash,
         title: document.title,
-        activeMemberId: (window as any).__ANX_ACTIVE_MEMBER_ID__ || null
+        currentView: (window as any).__ANX_CURRENT_VIEW__ || "agency",
+        activeMemberId: (window as any).__ANX_ACTIVE_MEMBER_ID__ || null,
+        activeCarouselItem: (window as any).__ANX_ACTIVE_CAROUSEL_ITEM__ || null,
+        visibleSection: detectVisibleSection(),
       };
 
       const res = await fetch('/api/voice-agent', {

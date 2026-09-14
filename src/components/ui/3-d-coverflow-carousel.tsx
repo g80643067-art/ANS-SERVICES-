@@ -134,6 +134,12 @@ export function CoverFlowCarousel({
   };
 
   useEffect(() => {
+    if (items && items[currentIndex]) {
+      (window as any).__ANX_ACTIVE_CAROUSEL_ITEM__ = items[currentIndex];
+    }
+  }, [items, currentIndex]);
+
+  useEffect(() => {
     if (!autoplay || isHovered || total <= 1) return;
     const interval = setInterval(nextSlide, autoplayDelay);
     return () => clearInterval(interval);
