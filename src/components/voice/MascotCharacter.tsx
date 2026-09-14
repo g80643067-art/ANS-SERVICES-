@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Mic, Volume2, Sparkles, HelpCircle, CheckCircle2, MessageCircle, Bot, X, Send } from "lucide-react";
+import { Mic, MicOff, Volume2, Sparkles, HelpCircle, CheckCircle2, MessageCircle, Bot, X, Send } from "lucide-react";
 import { AgentOption } from "./AgentSelectorModal";
 
 export type MascotState = "idle" | "listening" | "processing" | "speaking" | "success" | "confused" | "happy" | "angry" | "hungry" | "eating" | "bored" | "exploring";
@@ -15,9 +15,11 @@ interface MascotCharacterProps {
   onToggleChat?: () => void;
   currentPrompt?: string;
   currentResponse?: string;
+  onCloseResponse?: () => void;
   textInput?: string;
   setTextInput?: (val: string) => void;
   onTextSubmit?: (e: React.FormEvent) => void;
+  onQuickQuery?: (query: string) => void;
   selectedAgent?: AgentOption;
   onOpenAgentSelector?: () => void;
 }
@@ -32,9 +34,11 @@ export function MascotCharacter({
   onToggleChat,
   currentPrompt = "",
   currentResponse = "",
+  onCloseResponse,
   textInput = "",
   setTextInput,
   onTextSubmit,
+  onQuickQuery,
   selectedAgent,
   onOpenAgentSelector,
 }: MascotCharacterProps) {
@@ -84,14 +88,13 @@ export function MascotCharacter({
     }
 
     const interval = setInterval(() => {
-      if (window.speechSynthesis && (!window.speechSynthesis.speaking || window.speechSynthesis.paused)) {
-        setMouthFrame(0);
-      } else {
-        setMouthFrame((prev) => (prev + 1) % 4);
-      }
+      setMouthFrame((prev) => (prev + 1) % 4);
     }, 130);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setMouthFrame(0);
+    };
   }, [state]);
 
   // Subtle wandering movement around safe corner perimeter
@@ -580,13 +583,18 @@ export function MascotCharacter({
                   {state === "speaking" ? (
                     // Speaking Mouth Sync Animation Frames
                     mouthFrame === 0 ? (
-                      <path d="M74 98C76 104 84 104 86 98H74Z" fill="#C53030" stroke="#741A1A" strokeWidth="1" />
+                      <path
+                        d="M74 98C77 102 83 102 86 98"
+                        stroke="#822727"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                      />
                     ) : mouthFrame === 1 ? (
-                      <ellipse cx="80" cy="100" rx="4" ry="4" fill="#C53030" />
+                      <ellipse cx="80" cy="100" rx="4" ry="3.5" fill="#C53030" stroke="#741A1A" strokeWidth="0.8" />
                     ) : mouthFrame === 2 ? (
                       <path d="M75 99C77 106 83 106 85 99H75Z" fill="#C53030" stroke="#741A1A" strokeWidth="1" />
                     ) : (
-                      <path d="M75 99C77 101 83 101 85 99" stroke="#741A1A" strokeWidth="2.2" strokeLinecap="round" />
+                      <ellipse cx="80" cy="99" rx="3" ry="2" fill="#E53E3E" opacity="0.9" />
                     )
                   ) : state === "listening" ? (
                     // Attentive slightly parted 'o' mouth
