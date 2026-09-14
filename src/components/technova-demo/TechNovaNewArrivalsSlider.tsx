@@ -67,8 +67,8 @@ export function TechNovaNewArrivalsSlider({
         {/* Horizontal Scrollable Slider */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto pb-4 pt-1 no-scrollbar scroll-smooth snap-x snap-mandatory"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-6 overflow-x-auto pb-4 pt-1 no-scrollbar scroll-smooth snap-x snap-proximity"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         >
           {newArrivalProducts.map((product) => {
             const isWishlisted = wishlistIds.includes(product.id);
@@ -76,7 +76,7 @@ export function TechNovaNewArrivalsSlider({
             return (
               <div
                 key={product.id}
-                className="snap-start flex-shrink-0 w-[290px] sm:w-[320px] rounded-2xl bg-[#0D121F] border border-slate-800 hover:border-cyan-500/40 p-4 flex flex-col justify-between transition-all duration-300 group hover:shadow-[0_15px_30px_rgba(6,182,212,0.15)] transform hover:-translate-y-1"
+                className="snap-center flex-shrink-0 w-[290px] sm:w-[320px] rounded-2xl bg-[#0D121F] border border-slate-800 hover:border-cyan-500/40 p-4 flex flex-col justify-between transition-all duration-300 group hover:shadow-[0_15px_30px_rgba(6,182,212,0.15)] transform hover:-translate-y-1"
               >
                 {/* Image & Badges */}
                 <div className="relative aspect-square rounded-xl overflow-hidden bg-[#090C16] mb-4">

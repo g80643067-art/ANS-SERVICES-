@@ -175,20 +175,34 @@ export function CoverFlowCarousel({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background Ambience */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <img
-          src={items[currentIndex]?.img}
-          alt="ambience background"
+      {/* Background Ambience - Preloaded and mapped for smooth crossfades */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 bg-[#0c0a09]">
+        <div 
+          className="absolute inset-0"
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
             filter: "brightness(0.22) blur(32px)",
-            transform: "scale(1.15)",
-            transition: "opacity 1000ms ease, filter 1000ms ease",
+            transform: "scale(1.15) translateZ(0)",
+            willChange: "transform",
           }}
-        />
+        >
+          {items.map((item, idx) => (
+            <img
+              key={idx}
+              src={item.img}
+              alt="ambience background"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                willChange: "opacity",
+                opacity: idx === currentIndex ? 1 : 0,
+                transition: "opacity 1000ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            />
+          ))}
+        </div>
         <div
           className="absolute inset-0"
           style={{
@@ -377,8 +391,8 @@ export function CoverFlowCarousel({
                   zIndex,
                   filter,
                   transformOrigin: "center center",
-                  transition: "all 700ms cubic-bezier(0.16, 1, 0.3, 1)",
-                  willChange: "transform, opacity, filter",
+                  transition: "transform 700ms cubic-bezier(0.16, 1, 0.3, 1), opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), filter 700ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 700ms cubic-bezier(0.16, 1, 0.3, 1), border-color 700ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  willChange: "transform, opacity, filter, box-shadow",
                   backfaceVisibility: "hidden",
                   WebkitBackfaceVisibility: "hidden",
                   boxShadow: isBakeryCard && isCenter

@@ -43,6 +43,7 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
   const isProcessingRef = useRef<boolean>(false);
   const lastProcessedTextRef = useRef<string>("");
   const lastProcessedTimeRef = useRef<number>(0);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const updateState = useCallback((newState: MascotState) => {
     stateRef.current = newState;
@@ -51,6 +52,18 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
 
   useEffect(() => {
     synthRef.current = window.speechSynthesis;
+    
+    // Safety check: sometimes Chrome cancels audio but doesn't fire onend
+    const speechStuckCheck = setInterval(() => {
+      if (stateRef.current === 'speaking' && synthRef.current) {
+        if (!synthRef.current.speaking) {
+           isSpeakingRef.current = false;
+           currentAiUtteranceTextRef.current = "";
+           updateState(isMicMuted ? 'idle' : 'listening');
+        }
+      }
+    }, 500);
+
     const welcomeTimer = setTimeout(() => {
       if (!hasStarted && !isMicMuted) {
         setHasStarted(true);
@@ -64,6 +77,7 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
     }, 1200);
 
     return () => {
+      clearInterval(speechStuckCheck);
       clearTimeout(welcomeTimer);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
@@ -246,6 +260,7 @@ export function VoiceAgent({ onAction }: VoiceAgentProps) {
     updateState('speaking');
 
     const utterance = new SpeechSynthesisUtterance(text);
+    utteranceRef.current = utterance; // Prevent garbage collection bug
     const voices = synthRef.current.getVoices();
     const preferredVoice = voices.find(
       (v) => (v.lang.includes('hi') || v.lang.includes('IN') || v.name.includes('India')) && (v.name.includes('Female') || true)

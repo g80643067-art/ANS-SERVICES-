@@ -84,7 +84,11 @@ export function MascotCharacter({
     }
 
     const interval = setInterval(() => {
-      setMouthFrame((prev) => (prev + 1) % 4);
+      if (window.speechSynthesis && (!window.speechSynthesis.speaking || window.speechSynthesis.paused)) {
+        setMouthFrame(0);
+      } else {
+        setMouthFrame((prev) => (prev + 1) % 4);
+      }
     }, 130);
 
     return () => clearInterval(interval);

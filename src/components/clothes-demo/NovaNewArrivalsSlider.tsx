@@ -71,7 +71,8 @@ export function NovaNewArrivalsSlider({
         {/* Horizontal Carousel Track */}
         <div
           ref={scrollContainerRef}
-          className="flex items-stretch gap-6 overflow-x-auto pb-6 scrollbar-none snap-x snap-mandatory"
+          className="flex items-stretch gap-6 overflow-x-auto pb-6 scrollbar-none snap-x snap-proximity"
+          style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
         >
           {newArrivals.map((product) => {
             const wishlisted = isWishlisted(product.id);
@@ -80,7 +81,7 @@ export function NovaNewArrivalsSlider({
               <div
                 key={product.id}
                 onClick={() => onOpenProductModal(product)}
-                className="group w-[280px] sm:w-[320px] shrink-0 bg-zinc-950/70 rounded-2xl overflow-hidden border border-white/10 hover:border-amber-400/40 transition-all duration-300 flex flex-col justify-between snap-start cursor-pointer shadow-md hover:shadow-xl"
+                className="group w-[280px] sm:w-[320px] shrink-0 bg-zinc-950/70 rounded-2xl overflow-hidden border border-white/10 hover:border-amber-400/40 transition-all duration-300 flex flex-col justify-between snap-center cursor-pointer shadow-md hover:shadow-xl"
               >
                 {/* Image Stage */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-zinc-900">
